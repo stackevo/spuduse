@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+
+<!ENTITY RFC2119 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml">
+
+]>
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<?rfc strict="yes" ?>
+<?rfc toc="yes"?>
+<?rfc tocdepth="4"?>
+<?rfc symrefs="yes"?>
+<?rfc sortrefs="yes" ?>
+<?rfc compact="yes" ?>
+<?rfc subcompact="no" ?> <!-- keep one blank line between list items -->
+<rfc category="info" docName="draft-kuehlewind-spud-use-cases-00" ipr="trust200902">
+
+ <front>
+
+   <title>SPUD Use Cases</title>
+
+   <author fullname="Mirja Kühlewind" initials="M.K."
+           surname="Kühlewind">
+     <organization>ETH Zurich</organization>
+     <address>
+       <postal>
+         <city>Zurich</city>
+         <country>Switzerland</country>
+       </postal>
+       <email>mirja.kuehlewind@tik.ee.ethz.ch</email>
+     </address>
+   </author>
+
+   <date year="2015" />
+
+   <area>Transport</area>
+
+   <!--<workgroup>SPUD</workgroup>-->
+
+   <!--<keyword>template</keyword>-->
+
+   <abstract>
+     <t></t>
+   </abstract>
+ </front>
+
+ <middle>
+   <section title="Introduction">
+     <t>Text</t>
+
+     <section title="Requirements Language">
+       <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+       "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+       document are to be interpreted as described in <xref
+       target="RFC2119">RFC 2119</xref>.</t>
+     </section>
+   </section>
+
+   <section anchor="udp" title="UDP firewall traversal">
+       <section title="Problem Statement">
+           <t>Today UDP is often blocked (“99% of UDP is garbage”) but volume of (good) UDP traffic grows, e.g. RTCWEB uses UDP for data and media. Hard to establish session/flow state at firewalls as block rules are stateless. Therefore we need an explicit contract to establish state along the path (as today’s implicit contract does with TCP).</t>
+       </section>
+       <section title="Information Exposure">
+           <t>Use of identifiers (“tubes”) beyond the five-tuple to link packets together; Explicit ignaling/negotiation of tube start/end: Indicate start/stop to middlebox and confirm connection establishment by receiver.</t>
+       </section>
+       <section title="Mechanism">
+           [Describe what a firewall would do with this information.]
+       </section>
+       <section title="Deployment Incentives">
+       </section>
+       <section title="Trust and Privacy">
+       </section>
+     <t>text</t>
+   </section>
+   
+   <section anchor="app-limit" title="Application-Limited Flows">
+       <section title="Problem Statement">
+       </section>
+       <section title="Information Exposure">
+           <t>e.g. explicit indication of data rate for CBR traffic: video traffic could provide maximum rate with current encoding; network could expose rate shaping to simplify probing; endhost/network could provide indication of sudden changes in bandwidth demand/offer</t>
+       </section>
+       <section title="Mechanism">
+       </section>
+       <section title="Deployment Incentives">
+       </section>
+       <section title="Trust and Privacy">
+       </section>
+       <t>text</t>
+   </section>
+   
+   <section anchor="latency" title="Low-Latency Service">
+       <t>text</t>
+       <section title="Problem Statement">
+       </section>
+       <section title="Information Exposure">
+           <t>explicit indication of loss- vs. latency-sensitive traffic: loss-sensitive traffic faces larger buffer delay,but lower loss rate (tradeoff)</t>
+       </section>
+       <section title="Mechanism">
+           <t>latency-sensitive traffic could be managed in a different queue or with use of AQM such as PIE/ CoDel, but might see higher loss rates (no prioritization)</t>
+           <t>provider decides about bandwidth sharing between both services, and might or might not expose this information</t>
+       </section>
+       <section title="Deployment Incentives">
+       </section>
+       <section title="Trust and Privacy">
+       </section>
+   </section>
+   
+   <section anchor="mux" title="Service Multiplexing">
+       <t>text</t>
+       <section title="Problem Statement">
+       </section>
+       <section title="Information Exposure">
+           <t>Explicit indication of relative flow priority, relative packet priority within a flow</t>
+              
+       </section>
+       <section title="Mechanism">
+           <t>e.g. if service has multiple simultaneous transmission of video/audio/control data, interactive data would be prioritized within same service</t>
+           <t>e.g. more important packets such as I-frames in video could be prioritized within same flow/tube </t>
+       </section>
+       <section title="Deployment Incentives">
+       </section>
+       <section title="Trust and Privacy">
+       </section>
+   </section>
+
+   <section anchor="Acknowledgements" title="Acknowledgements">
+     <t></t>
+   </section>
+
+   <section anchor="IANA" title="IANA Considerations">
+     <t>This memo includes no request to IANA.</t>
+   </section>
+
+   <section anchor="Security" title="Security Considerations">
+     <t>No security considerations.</t>
+   </section>
+ </middle>
+
+ <back>
+
+   <references title="Normative References">
+     &RFC2119;
+
+     <!--<reference anchor="min_ref">
+
+       <front>
+         <title>Minimal Reference</title>
+
+         <author initials="authInitials" surname="authSurName">
+           <organization></organization>
+         </author>
+
+         <date year="2015" />
+       </front>
+     </reference>-->
+   </references>
+
+   <references title="Informative References">
+
+   </references>
+
+   <!-- Change Log
+
+v00 2015-05-07  MK   Initial version
+
+  -->
+ </back>
+</rfc>
