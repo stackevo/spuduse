@@ -159,6 +159,7 @@
    <section anchor="mux" title="Network Monitoring">
        <t>text</t>
        <section title="Problem Statement">
+           [What's the difference to ICMP...?]
        </section>
        <section title="Information Exposure">
            <t>Test bandwidth/delay? Error reports?</t>
