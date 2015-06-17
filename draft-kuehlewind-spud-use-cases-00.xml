@@ -55,7 +55,7 @@
      </section>
    </section>
 
-   <section anchor="udp" title="UDP firewall traversal">
+   <section anchor="udp" title="Firewall Traversal">
 	<t></t>
        <section title="Problem Statement">
            <t>Today UDP is often blocked by firewalls either completely or only enable for a few well-known application. However, this makes this hard to deploy new services on top of UDP.</t>
@@ -65,9 +65,9 @@
             <t>Even if firewall administrator are willing to implement new rules for UDP services, it is hard to establish session/flow state as it is not know if the receiver is willing to accept the connection and further how long state must be maintained when established once. Therefore we need an explicit contract to establish state along the path (as today's implicit contract does with TCP).</t>
            </section>
            <section title="Information Exposure">
-               <t>To maintain state in the network, it must be possible to easily assign each packet to a session that is passing a certain network node. This state must not be bounded to a five-tuple, therefore we propose the use of identifiers "tubes") beyond the five-tuple to link packets together. This allows for differential treatment of different packets within one 5-tuple flow (if the application has segmentation control and provides requirements on a per-packet base).</t>
+               <t>To maintain state in the network, it must be possible to easily assign each packet to a session that is passing a certain network node. This state must not be bound only to a five-tuple, therefore we propose the use of identifiers "tubes") beyond the five-tuple to link packets together. This allows for differential treatment of different packets within one 5-tuple flow (if the application has segmentation control and provides requirements on a per-packet base). Tube IDs must be hard to guess: a tube ID in addition to a five-tuple as an identifier, given significant entropy in the tube ID, provides an additional assurance that only devices along the path or devices cooperating with devices along the path can send packets that will be recognized by middleboxes and endpoints as valid.</t>
 
-               <t>Further to maintain state, the sender must indicate explicitly start and end of a tube to middlebox, while the receiver must confirm connection establishment. Therefore all SPUD connection must be bidirectional. Even though UDP is not a bidirectional transport protocol, often services on top of UDP are bidirectional anyway. Even if not, we only require one packet to acknowledge a new connection. This is low overhead for increased security. This connection set-up should not impose any additional start-up latency, there the sender must be able to send payload data in the first packet.</t>
+               <t>Further, to maintain state, the sender must explicitly indicate the start and end of a tube to the path, while the receiver must confirm connection establishment. This, together with the first packet following the confirmation, provides a guarantee of return routability; i.e. that the sender is actually at the address it says it is. This impies all SPUD tubes must be bidirectional, or at least support a feedback channel for this confirmation. Even though UDP is not a bidirectional transport protocol, often services on top of UDP are bidirectional anyway. Even if not, we only require one packet to acknowledge a new connection. This is low overhead for this basic security feature. This connection set-up should not impose any additional start-up latency, so the sender must be also able to send payload data in the first packet.</t>
 
                <t>If a firewall blocks a SPUD packet, it can be beneficial for the sender to know why the packet was blocked. Therefore a SPUD-aware middlebox must be able to send error messages. Such an error message can either be sent directly to the sender itself, or alternatively to the receiver that can decided to forward the error message to a sender or not.</t>
            </section>
@@ -86,9 +86,26 @@
                <t>For application developers that actually would like to use a new transport services, there is today often only two choices; encapsulation over UDP or over TCP. SPUD already provides encapsulation over UDP as well as maintains (a few) additional information about the network state. This shim layer can support application developers to more easily implement new services.</t>
            </section>
            <section title="Trust and Privacy">
-               <t>We proposed to limit the scope of the tube ID to the five-tuple. Therefore any information provided by SPUD cannot be used to further assign different flows to the same user. This limitation needs further discussion.</t>
+               <t>We proposed to limit the scope of the tube ID to the five-tuple. While this makes the tube ID useless for session mobility, it does mean that the valid ID space is sufficiently sparse to maintain the "hard to guess" property, and prevents tube IDs from being misused to track flows from the same endpoint across multiple addresses. This limitation may need further discussion.</t>
 
-               <t>By providing information on the connection start up, SPUD only exposed information that are often already given in the higher layer semantics. Thus it does not expose addition information, it only makes the information explicit and access without specific higher-layer/application-level knowledge.</t>
+               <t>By providing information on the connection start up, SPUD only exposes information that are often already given in the higher layer semantics. Thus it does not expose additional information, it only makes the information explicit and access without specific higher-layer/application-level knowledge.</t>
+       </section>
+   </section>
+
+   <section anchor="state-lifetime" title="State Lifetime Discovery">
+   <t></t>
+       <section title="Problem Statement">
+           <t>Related to firewall traversal is the problem of state timeout...</t>
+       </section>
+       <section title="Information Exposure">
+           <t>Midpoints expose their timers, endpoints expose heartbeat intervals?</t>
+       </section>
+       <section title="Mechanism">
+       </section>
+       <section title="Deployment Incentives">
+       </section>
+       <section title="Trust and Privacy">
+           <t>Need a good answer to why this is not a vector for simplified state exhaustion attacks?</t>
        </section>
    </section>
 
@@ -123,6 +140,8 @@
         </section>
     </section>
 
+
+
     <section anchor="app-limit" title="Application-Limited Flows">
 	<t></t>
         <section title="Problem Statement">
@@ -137,8 +156,6 @@
         <section title="Trust and Privacy">
         </section>
     </section>
-
-
 
    <section anchor="mux" title="Service Multiplexing">
 	<t></t>
@@ -161,7 +178,7 @@
    <section anchor="diag" title="Network Diagnostics">
        <t>text</t>
        <section title="Problem Statement">
-           <t>[What's the difference to ICMP...?]</t>
+           <t>[What's the difference to ICMP...? its better thats the difference :) brian to write this section]</t>
        </section>
        <section title="Information Exposure">
            <t>Test bandwidth/delay? Error reports?</t>
