@@ -18,8 +18,8 @@
 
    <title>SPUD Use Cases</title>
 
-   <author fullname="Mirja Kühlewind" initials="M.K."
-           surname="Kühlewind">
+   <author fullname="Mirja Kuehlewind" initials="M."
+           surname="Kuehlewind">
      <organization>ETH Zurich</organization>
      <address>
        <postal>
@@ -57,41 +57,41 @@
 
    <section anchor="udp" title="UDP firewall traversal">
        <section title="Problem Statement">
-           <t>Today UDP is often blocked by firewalls either completely or only enable for a few well-known application. However, this makes this hard to deploy new services on top of UDP.
-               
+           <t>Today UDP is often blocked by firewalls either completely or only enable for a few well-known application. However, this makes this hard to deploy new services on top of UDP.</t>
+
             <t>For a long time UDP was not much used for high volume traffic and therefore most UDP traffic was assumed to be spam or attack traffic. This is not true anymore and the volume of (good) UDP traffic is growing due to mostly voice and video (real-time) services , e.g. RTCWEB uses UDP for data and media, where TCP is not suitable anyway.</t>
-               
+
             <t>Even if firewall administrator are willing to implement new rules for UDP services, it is hard to establish session/flow state as it is not know if the receiver is willing to accept the connection and further how long state must be maintained when established once. Therefore we need an explicit contract to establish state along the path (as today’s implicit contract does with TCP).</t>
            </section>
            <section title="Information Exposure">
                <t>To maintain state in the network, it must be possible to easily assign each packet to a session that is passing a certain network node. This state must not be bounded to a five-tuple, therefore we propose the use of identifiers (“tubes”) beyond the five-tuple to link packets together. This allows for differential treatment of different packets within one 5-tuple flow (if the application has segmentation control and provides requirements on a per-packet base)</t>
-               
+
                <t>Further to maintain state, the sender must indicate explicitly start and end of a tube to middlebox, while the receiver must confirm connection establishment. Therefore all SPUD connection must be bidirectional. Even though UDP is not a bidirectional transport protocol, often services on top of UDP are bidirectional anyway. Even if not, we only require one packet to acknowledge a new connection. This is low overhead for increased security. This connection set-up should not impose any additional start-up latency, there the sender must be able to send payload data in the first packet.</t>
-               
+
                <t>If a firewall blocks a SPUD packet, it can be beneficial for the sender to know why the packet was blocked. Therefore a SPUD-aware middlebox must be able to send error messages. Such an error message can either be sent directly to the sender itself, or alternatively to the receiver that can decided to forward the error message to a sender or not.</t>
            </section>
            <section title="Mechanism">
                <t>A firewall or middlebox can use the tube ID as an identifier for its session state information. If the tube id is large enough it will be hard for a non-eavesdropping attacker to guess the ID.</t>
-               
+
                <t>If a firewall receives a SPUD message that signals the start of a connection, it can decide to establish new state for this tube. Alternative it can also forward the packet to the receiver and wait if the connection is wanted before establishing state. To not requiring to forward unknown payload, firewall might want to forward the initial SPUD packet without payload and only send the full packet if the connection has be accepted by the receiver.</t>
-               
+
                <t>The firewall must still maintain a timer to delete the state of a certain tube if no packets were received for a while. However, if a end signal is received the firewall can remove the state information faster.</t>
-               
+
                <t>If a firewall receives a SPUD message which does not indicate the start of a new tube and no state is available for this tube, it may decide to block the traffic. This can happen if the state has already timed out or if the traffic was rerouted. In addition a firewall may send an error message to the sender or the receiver indication that not state information are available. If the sender receives such a message it can resend a start signal (potential together with other tube state information) and continue its transmission.</t>
            </section>
            <section title="Deployment Incentives">
                <t>It is not expected that the provided SPUD information will enable generic UDP-based services to pass firewall, however for new services that a firewall administrator is willing to allow to pass, it makes state handling easier.</t>
-               
+
                <t>For application developers that actually would like to use a new transport services, there is today often only two choices; encapsulation over UDP or over TCP. SPUD already provides encapsulation over UDP as well as maintains (a few) additional information about the network state. This shim layer can support application developers to more easily implement new services.</t>
            </section>
            <section title="Trust and Privacy">
                <t>We proposed to limit the scope of the tube ID to the five-tuple. Therefore any information provided by SPUD cannot be used to further assign different flows to the same user. This limitation needs further discussion.</t>
-               
+
                <t>By providing information on the connection start up, SPUD only exposed information that are often already given in the higher layer semantics. Thus it does not expose addition information, it only makes the information explicit and access without specific higher-layer/application-level knowledge.</t>
        </section>
      <t>text</t>
    </section>
-       
+
     <section anchor="latency" title="Low-Latency Service">
         <t>text</t>
         <section title="Problem Statement">
@@ -99,29 +99,29 @@
         </section>
         <section title="Information Exposure">
             <t>While large buffers that are able to absorb traffic spikes which are often induce by short bursts are beneficial for some application, the queuing delay that might be induces by these large buffers are very harmful to other application. We therefore propose an explicit indication of loss- vs. latency-sensitivity. This indication does not prioritize one over the other traffic. While loss-sensitive traffic might face larger buffer delay but lower loss rate, latency-sensitive traffic has to make exactly the opposite tradeoff.</t>
-            
+
             <t>In addition SPUD can indicate that a packet within a tube or one tube in relation to another tube from the same sender has a lower priority. For interactive conferencing applications, for example, normal video data yields to interframes yields to audio. Future integration of codec and transport technology can use even finer grained more priority levels to provide automatic graceful degradation of service within the network itself. This information can be used to preferential drop packets as further explained below.</t>
-            
+
             <t>Further an application can indicate a maximum acceptable single-hop queueing delay per tube, expressed in milliseconds. While this mechanism does not guarantee that sent packets will experience less than the requested delay due to queueing delay, it can significantly reduce the amount of traffic uselessly sitting in queues, since at any given instance only a small number of queues along a path (usually only zero or one) will be full.
             </section>
             <section title="Mechanism">
                 <t>A middlebox may use latency-sensitive signal to assign packet to the appropriate service if different services are implemented at this middlebox. Today's traffic that does not indicate a low loss or low latency preference would therefore be still assigned to today's best-effort service. The simplest implementation to provide a low latency service (without disturbing existing traffic) is to manage traffic with the latency sensitive flag set in a separate queue. This queue either in itself provides only a short buffer which induces a hard limit for the maximum (per-queue) delay or uses an AQM such as PIE/ CoDel that is configured to keep the queuing delay low. In a two-queue system the network provider must decides about bandwidth sharing between both services, and might or might not expose this information. While initial there might be only few flow indication low latency preference and therefore this service might have a low maximum bandwidth sharing, the sharing ratio should be adopted to the traffic/number of flow over time, if not done in an adaptive way. Applications and endpoints setting the latency sensitivity flag on a tube must be prepared to experience relatively higher loss rates on that tube, and might use techniques such as Forward Error Correction (FEC) to cope with these losses.</t>
-                
+
                 <t><!--Preferential drop in case of congestion can then be implemented by on-path devices by translating yield instructions into priority queueing or other intra-domain signals (e.g. DSCP).-->
                     Preferential dropping can be implemented by a router queue in case packets need to be dropped due to congestion. In this case the router might not drop the next incoming packet but look for a packet that is already in the queue but has a lower priority with regard to actual packet that should have been dropped. To not search the whole queue every time a packet has to be drop, the router might not the position of the last low priority packet of a tube in a separate table. However, the chance that a low priory packet of the same or corresponding tube currently sits in the queue, is lower the smaller the buffer is.</t>
-                
+
                 <t>SPUD-aware routers can then drop any packet which would be placed in a queue that has more than the signal maximum per-hop delay at that point in time, before queue admission, thereby reducing overall congestion. Alternatively a SPUD-aware node might only remove the payload and add a SPUD error message, to report what the problem is. </T>
             </section>
             <section title="Deployment Incentives">
                 <t>Application developers perform large effort to make latency-sensitive traffic work over today's internet. However if large delay are induce by the network, an application at the endpoint cannot do much. Therefore application would need further support by the network.</t>
-                
+
                 <t>Network operator have already realized a need to better support low latency services. However, they want to avoid any service degradation for existing traffic as well as risking stability due to large configuration changes. Introducing an additional service for latency-sensitive traffic that cab exist in parallel to today's network service (or even replace today's service fully in future...) helps this problem.</t>
             </section>
             <section title="Trust and Privacy">
                 <t>As an application does not benefit from lying about this information as it has to make a tradeoff between low loss and potential high delay or low delay and potential high loss, there is no incentive for lying. As simple classification of traffic in loss-sensitive and latency-sensitive does not expose privacy-critical information about the user's behavior.</t>
         </section>
     </section>
-   
+
     <section anchor="app-limit" title="Application-Limited Flows">
         <section title="Problem Statement">
         </section>
@@ -135,16 +135,16 @@
         <section title="Trust and Privacy">
         </section>
     </section>
-   
 
-   
+
+
    <section anchor="mux" title="Service Multiplexing">
        <t>text</t>
        <section title="Problem Statement">
        </section>
        <section title="Information Exposure">
            <t>Explicit indication of relative flow priority, relative packet priority within a flow</t>
-              
+
        </section>
        <section title="Mechanism">
            <t>e.g. if service has multiple simultaneous transmission of video/audio/control data, interactive data would be prioritized within same service</t>
@@ -155,7 +155,7 @@
        <section title="Trust and Privacy">
        </section>
    </section>
-   
+
    <section anchor="mux" title="Network Monitoring">
        <t>text</t>
        <section title="Problem Statement">
@@ -163,7 +163,7 @@
        </section>
        <section title="Information Exposure">
            <t>Test bandwidth/delay? Error reports?</t>
-           
+
            <t>[text from paper:] SPUD’s declaration reflection capability allows a “queue trace” of SPUD-aware routers. Here, the application sends a SPUD “probe”, setting the current maximum queue delay to 0; SPUD-aware network nodes will then overwrite the value in the CBOR map if they may impart a higher queueing delay than the currently declared maximum. This information can then be used by the application to estimated the maximum jitter and configure its streaming buffers appropriately.</t>
        </section>
        <section title="Mechanism">
