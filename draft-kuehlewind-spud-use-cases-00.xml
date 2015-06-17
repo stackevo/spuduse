@@ -110,12 +110,12 @@
                 <t><!--Preferential drop in case of congestion can then be implemented by on-path devices by translating yield instructions into priority queueing or other intra-domain signals (e.g. DSCP).-->
                     Preferential dropping can be implemented by a router queue in case packets need to be dropped due to congestion. In this case the router might not drop the next incoming packet but look for a packet that is already in the queue but has a lower priority with regard to actual packet that should have been dropped. To not search the whole queue every time a packet has to be drop, the router might not the position of the last low priority packet of a tube in a separate table. However, the chance that a low priory packet of the same or corresponding tube currently sits in the queue, is lower the smaller the buffer is.</t>
 
-                <t>SPUD-aware routers can then drop any packet which would be placed in a queue that has more than the signal maximum per-hop delay at that point in time, before queue admission, thereby reducing overall congestion. Alternatively a SPUD-aware node might only remove the payload and add a SPUD error message, to report what the problem is. </T>
+                <t>SPUD-aware routers can then drop any packet which would be placed in a queue that has more than the single maximum per-hop delay at that point in time, before queue admission, thereby reducing overall congestion. Alternatively a SPUD-aware node might only remove the payload and add a SPUD error message, to report what the problem is. </T>
             </section>
             <section title="Deployment Incentives">
-                <t>Application developers perform large effort to make latency-sensitive traffic work over today's internet. However if large delay are induce by the network, an application at the endpoint cannot do much. Therefore application would need further support by the network.</t>
+                <t>Application developers go to a great deal of effort to make latency-sensitive traffic work over today's internet. However if large delays are induced by the network, an application at the endpoint cannot do much. Therefore applications can benefit from further support by the network.</t>
 
-                <t>Network operator have already realized a need to better support low latency services. However, they want to avoid any service degradation for existing traffic as well as risking stability due to large configuration changes. Introducing an additional service for latency-sensitive traffic that cab exist in parallel to today's network service (or even replace today's service fully in future...) helps this problem.</t>
+                <t>Network operators have already realized a need to better support low latency services. However, they want to avoid any service degradation for existing traffic as well as risking stability due to large configuration changes. Introducing an additional service for latency-sensitive traffic that cab exist in parallel to today's network service (or even replace today's service fully in future...) helps this problem.</t>
             </section>
             <section title="Trust and Privacy">
                 <t>As an application does not benefit from lying about this information as it has to make a tradeoff between low loss and potential high delay or low delay and potential high loss, there is no incentive for lying. As simple classification of traffic in loss-sensitive and latency-sensitive does not expose privacy-critical information about the user's behavior.</t>
@@ -156,7 +156,7 @@
        </section>
    </section>
 
-   <section anchor="mux" title="Network Monitoring">
+   <section anchor="mux" title="Network Diagnostics">
        <t>text</t>
        <section title="Problem Statement">
            [What's the difference to ICMP...?]
