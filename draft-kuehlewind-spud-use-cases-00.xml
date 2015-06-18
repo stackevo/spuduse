@@ -7,7 +7,7 @@
 <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
 <?rfc strict="yes" ?>
 <?rfc toc="yes"?>
-<?rfc tocdepth="4"?>
+<?rfc tocdepth="1"?>
 <?rfc symrefs="yes"?>
 <?rfc sortrefs="yes" ?>
 <?rfc compact="yes" ?>
@@ -18,7 +18,7 @@
 
    <title>SPUD Use Cases</title>
 
-   <author fullname="Mirja Kuehlewind" initials="MK"
+   <author fullname="Mirja Kuehlewind" initials="M"
            surname="Kuehlewind">
      <organization>ETH Zurich</organization>
      <address>
@@ -95,17 +95,31 @@
    <section anchor="state-lifetime" title="State Lifetime Discovery">
    <t></t>
        <section title="Problem Statement">
-           <t>Related to firewall traversal is the problem of state timeout...</t>
+           <t>Even if the transport protocol implements a close-down mechanism or SPUD explicitly provides an end of tube signal, a network device cannot assume that these signals are provided reliably. Therefore each network device that holds per-flow/per-tube state must implement a mechanism to remove the state if no traffic that is matching this state information has been observer for a while. Usually this is realized by maintaining a timeout since the last observed packet.</t>
+           
+           <t>An endpoint, that wants to keep a connection open even when not sending any data for a while, might need to send heartbeat packets to keep state alive that potentially is store somewhere on the network path. However, the timeout period of the network device storing this information is not know to the endpoint. Therefore it either has to send heartbeat in very short occurrence or might assume a default value of 150ms that is often used today.</t>
        </section>
        <section title="Information Exposure">
-           <t>Midpoints expose their timers, endpoints expose heartbeat intervals?</t>
+           <t>SPUD can be used to request the timeout used by a middlebox. As SPUD-enabled endpoint therefore an path-to-end element that is initialized with an non-valid value (e.g. 0) and midpoint can update this information a timeout is used to maintain per-tube state. As multiple network devices might be on a path that maintain per-tube state, the timeout information should only be updated to a lower value. A sender could also initial the timeout value to the minimum heartbeat frequency it will use or the maximum idle period (if known). However, in this case it is not know if there are only middleboxes on the path that have a larger timeout or if non of the middlebox on path where able to understand this SPUD information.</t>
+           
+           <t>[Editor's note: Would it be necessary/useful to get a (separate) confirmation from each middlebox that has understood and read this SPUF information? Alternatively, it would maybe be useful signal the proposed heartbeat period separately, however that's also complicated because the endpoint might adapt it's heartbeat period based on the timeout information...]</t>
        </section>
        <section title="Mechanism">
+           <t>If a network devices that uses a timeout to remove per-tube state receives a SPUD timeout information request, it should expose it's own timeout value if it value is smaller than the one that is already given in the SPUD header. Alternatively, if a value is already given, it might decide to use the given value as timeout for the state information of this tube, e.g if the timeout smaller.</t>
+           <t>A SPUD sender can request the timeout used by network devices on path to maintain state. If a minimum heartbeat frequency is used or the maximum idle period is known, the sender might pre-set this value. If the pre-set value is not changed, the sender does not know if there is at least on SPUD-aware middlebox on the path that understands the time-out information. If any case a sender must always assume that there could be addition non-SPUD aware middlebox that have a smaller timeout. Therefore even if the proposed timeout is used for heartbeating, traffic can still be blocked because state was removed. This is also the case if a middlebox did not correctly indicate its timeout value, e.g. when the value is dynamically changed to a smaller value if more state needs to be maintained.</t>
+           <t>[Editor's note: Do we need a SPUD message that can be initialized by the middlebox to let the endpoint know that the time has changed?]</t>
+           <t>A SPUD endpoint receiving a SPUD header with timeout information should reflect this information to the sender with the next packet that will be sent. Therefore this information should be requested with the first packet, that should immediately trigger the receiver to at least send one packet. In addition SPUD-aware nodes on the backward path are able to also signal their timeout.</t>
+           <t>[Editor's note: Is it necessary to have an explicit SPUD heartbeat packet, that should also be reflected by the receiver to keep state on the backwards path alive..?]</t>
        </section>
        <section title="Deployment Incentives">
+           <t>Initially, if not widely deployed, there will be not much benefit of using this extension, as with basically all SPUD information. However, an endpoint can never be sure that all middleboxes on the path that maintain state information based on a timeout will expose this information (correctly). Therefore an endpoint must always be prepared that traffic can be blocked (after an idle period) and the connection must be restarted. This is the same today if heartbeat are used. Therefore, SPUD will not help to simplify the implementation but it will also no make it much more complicated as also the heartbeat interval might be changed.</t>
+           <t>However, under the assumption that there are usually only a small number of middblebox on one network path that hold (per-tube) state information, usually only one or maybe two, it is likely that if information is exposed by a middlebox, this information is correct and can be used.</t>
+           <t>The more SPUD gets deployed, the more often endpoints will be able to set the heartbeat interval correctly. This will reduce the number of unnecessary reconnects that cause additional latency. Further, an endpoint might be able to request a higher timeout by pre-setting the value.</t>
+           <t>Network nodes that understand the SPUD timeout information and expose their timeouts, are able to handle timeouts more flexible, e.g. announcing lower timeout values if space is sparse. Further if endpoint announce a low pre-set value, as they know that they will only have short idle periods, the timeout could be reduced.</t>
        </section>
-       <section title="Trust and Privacy">
-           <t>Need a good answer to why this is not a vector for simplified state exhaustion attacks?</t>
+       <section title="Trust, Privacy and Security">
+           <t>[Editor's note: no trust needed here as discussed above... right? And I currently don't see privacy issues here...?']</t>
+           <t>[Editor's note: Is not a vector for simplified state exhaustion attacks? Don't think it's worse than TCP...? Any other attacks?]</t>
        </section>
    </section>
 
