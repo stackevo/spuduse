@@ -159,33 +159,49 @@
     <section anchor="app-limit" title="Application-Limited Flows">
 	<t></t>
         <section title="Problem Statement">
+            <t>Today, there is a large number of flows that are (most of the time) application limited but where the application is able to adapt the limit to the traffic conditions. An example is live-streaming where the coding rate can be adapted in certain interval. Note, these intervals are usually larger than the congestion feedback delay of one RTT. However, it is hard for an endpoint/application to estimate the current and future congestion level correctly. Especially, it is hard to estimate the fair share of the bottleneck capacity for flows that are (step-wise) application limited, if adaptive but greedy cross traffic is present at the bottleneck. Often those flows might decrease their data rate rather quickly, if loss or an increase in the loss rate is observed. However, increasing the data rate again is often more complicated as the application would need to probe how much more capacity is available. Further, those application usually do not what to change their data/coding rate too often, as this has a negative effect on the user's quality of experience.</t>
         </section>
         <section title="Information Exposure">
-            <t>e.g. explicit indication of data rate for CBR traffic: video traffic could provide maximum rate with current encoding; network could expose rate shaping to simplify probing; endhost/network could provide indication of sudden changes in bandwidth demand/offer</t>
+            <t>With SPUD, the sender can provide an explicit indication of maximum data rate that the current encoding will need. This can provide useful information to the bottleneck to decided how to threat the corresponding tube correctly, e.g. setting a rate limit or scheduling weight if served in an own queue.</t>
+            <t>Further, a network node that imposes rate shaping could expose the rate limit to the sender (if requested). This would help the sender to choose the right encoding and simplifies probing. If the rate limited is changed the network node might want to signal this change without being requested for it. However in this case, it's easy for an attacked to send a wrong rate limit, therefore a endpoint might not change its data rate immediately, but might be prepared to see higher losses rates instead.</t>
+            <t>In addition, both the endpoint as well as a middlebox could announce sudden changes in bandwidth demand/offer. While for the endpoint it might be most important to indicate that the bandwidth demand is increased, a middlebox could indicate that more bandwidth is (currently) available.                 Note that this information should only be indicated if the network node was previously the bottleneck/the out-going link is fully loaded. However, if the information that bandwidth is available is provided to multiple endpoints at the same time, there is a higher risk of overloading the network if all endpoints increase their rate at the same time.</t>
+            <t>[Editor's note: Should a middlebox even indicate how much capacity is available.. or 1/n of the available capacity if indicated to n endpoints? But there might be a new bottleneck now...]</t>
         </section>
         <section title="Mechanism">
+            <t>If the maximum sending rate of a flow is exposed this information could be used to make routing decision, if e.g. two paths are available that have different link capacity and average load characteristics. Further a network nodes that receives an indication for a maximum rate limit of a certain tube, might decide to threat this flow in an own queue and prioritize this flow in order to keep the delay low as long as indicated rate limit is not exceeded. This should only be done if there is sufficient capacity on the link, that means average load over a previous time period has be low enough to serve an additional maximum traffic load as indicated by the rate limit, or the flow is known to have priority, e.g. based on additional out-of-band signaling. If the link, however, is currently congested, a middlebox might choose to ignore this information or indicate a lower rate limit.</t>
+            <t>A sender than get indicated that rate shaping is used with a certain rate limit might choose its current data rate/coding rate appropriately. However, a sender should still implement an mechanism to probe if more bandwidth is available to verify the provided information. As certain rate limit is expected the sender should probe carefully around this rate.</t>
+            <t>If a sender gets indicated that more bandwidth is available it should not just switch to a higher rate but probe carefully. Therefore it might step-wise increase its coding rate or first add additional FEC information which will increase the traffic rate on the link and at the same time provide additional protection if capacity limit is reached.</t>
+            <t>A network node that receives an indication that a flow will increase its rate abruptly, the network node might prioritize this flow for a certain (short) time to enable a smoother transition. [Editor's node: Need to figure out if high loss/delay when the coding rate is increased is actually problem and if so further evaluations if short-term prioritization helps is needed.]</t>
         </section>
         <section title="Deployment Incentives">
+            <t>By indicating a maximum sending rate a network operator might be able to better handle/schedule the current traffic. Therefore the network operator might be willing to support these kind of flows explicitly by trying to serve the flow with the requested rate. This can benefit the service quality and increase the user satisfaction with the provided network service.</t>
+            <t>Current application have no good indication when to change their coding rate, especially increase the rate is hard, as it should be avoided to change the rate (forth and back) to often. An indication if and how much bandwidth is available, is therefore helpful for the application and can simply probing (even though there will still and always be an additional control loop needed to react to congestion and probe).</t>
+            <t>If the maximum sending rate is known by the application, the application might be willing to expose this information if there is a change that the network will try to support this flow by providing sufficient capacity.</t>
         </section>
-        <section title="Trust and Privacy">
+        <section title="Trust, Privacy and Security">
+            <t>[TBD] [Editor's note: is there an attack possible by indicating a low limit (from or to the application)? Note, that the application should not rely on this information and still probe or more capacity (if need) and react to congestion!]</t>
         </section>
     </section>
 
    <section anchor="mux" title="Service Multiplexing">
 	<t></t>
        <section title="Problem Statement">
+           <t>Many services open multiple transmission to transfer different kind of data which usually have a clear priority between each other which is, of course know by the service itself. One example is WebRTC where the audio is most important and should be higher prioritized than the video, while control data might have the lowest priority. Further, some packet with in one flow might be more important than others within the same flow/tube, e.g. such as I-frames in video transmissions. However, today a network will threat all packets the same in case of congestion and might e.g. drop audio packets while video and control data are still transmitted.</t>
        </section>
        <section title="Information Exposure">
-           <t>Explicit indication of relative flow priority, relative packet priority within a flow</t>
-
+           <t>A SPUD sender can indicate a lower priority relatively to another tube. As the tube ID should be hard to guess, knowing the tube ID is a strong indication that the sender has on path knowledge.</t>
+           <t>Similar a lower packet priority within one flow could be indicated as already describe for the low latency support use case. [Editor's note: do we want to also provide per-packet information over spud? Or would all lower priority packets of one flow simply below to a different tube? In this case can we send a SPUD start message with more than on tube ID?]</t>
        </section>
        <section title="Mechanism">
-           <t>e.g. if service has multiple simultaneous transmission of video/audio/control data, interactive data would be prioritized within same service</t>
-           <t>e.g. more important packets such as I-frames in video could be prioritized within same flow/tube </t>
+           <t>A congestion network node might preferentially drop packets with lower priority if a packet with higher priority belong to the same tube or same service was chosen to be dropped by the AQM. Note that a middlebox can only drop a different packet is there if currently a lower priority packet is queued. Therefore a middlebox might need to hold additional state. Alternatively, the middlebox might queue the lower priority traffic in the a different queue. Using a different queue might be suitable if lower flow priority is indicated but should be avoided for lower priority packets within the same flow. Further, using a lower priority queue will not only give higher priority to the traffic belong to the same service/sender but also to all other traffic which is not the intention. [Editor's note: Does it makes sense to in addition rate-limit the higher prirority flows to their current rate to make sure that the bottleneck is not further overloaded...?]</t>
+           <t>A sender might indicate lower priority to certain tubes/packets. If only losses/congestion is experienced for the lower priority traffic, a sender should still not increase its sending for the higher priority traffic and might even consider to decrease the sending rate for this flow as well. Potentially a (delay-based) mechanism for shared bottleneck should be used to ensure that all transmissions actually share the same bottleneck.</t>
        </section>
        <section title="Deployment Incentives">
+           <t>[Editor's note: similar as above -> support of interactive services increases costumer satisfaction...]</t>
        </section>
        <section title="Trust and Privacy">
+           <t>As only lower priority should be indicated, it is harder to use this information for an attack.</t>
+           <t>[Editor's note: Do not really see any trust or privacy concerns here...?]</t>
        </section>
    </section>
 
