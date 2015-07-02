@@ -43,11 +43,15 @@
    </abstract>
  </front>
 
- <middle>
-   <section title="Introduction">
-     <t>This document describe use cases for a common Substrate Protocol for User Datagrams (SPUD) that could be used by an overlaying transport or application to explicitely expose information to middleboxes or request information from (SPUD-aware) middleboxes.</t>
+<middle>
+  <section title="Introduction">
+    <t>This document describe use cases for a common Substrate Protocol for User Datagrams (SPUD) that could be used by an overlaying transport or application to explicitely expose information to middleboxes or request information from (SPUD-aware) middleboxes.</t>
 
-     <t>For each use case, we first describe a problem that can not be solved, or only inefficiently, with current protocols. Subsequently an own paragraph discusses which information could/should be exposed by which party to help the described problem. In this document we assume that there is no trust-relationship between the communication endpoints and any middlebox on the path. Therefore we must always assume that information that is exposed can be wrong or nobody will actually act based on the exposed information. However, for the described use cases there should still be a benefit, e.g if otherwise no information would be available. In addition, to demonstrate the feasibilty of the proposed use case, we discuss mechanisms that would use the exposed information at the endpoints or in the middlebox. The described mechanisms do not have to be the only nor the best approach but should proof the usablility of the exposed information. Based on these mechanism we discuss deployment incentives of each involved party. There must be clear incentives for each party to justify the proposed information exposure and at best an incremental deployment strategy. Finally, we discuss potentially pricacy concerns regarding the information that are poposed to be exposed, as well as potential security issues of the proposed mechanisms.</t>
+    <t>For each use case, we first describe a problem that can not be solved with current protocols, or only solved inefficiently. We then discuss which information should be exposed by which party to help the described problem. We also discuss potential mechanisms to use that exposed information at middleboxes and/or endpoints, in order to demonstrate the feasibility of using the exposed information to the given use case. The described mechanisms are not necessarily proposals for moving forward, nor do  they necessarily represent the best approach for applying the exposed information,  but should illustrate and motivate the applicability of the exposed information.</t>
+
+    <t> In this document we assume that there is no pre-existing trust relationship between the communication endpoints and any middlebox on the path. Therefore we must always assume that information that is exposed can be wrong or nobody will actually act based on the exposed information. However, for the described use cases there should still be a benefit, e.g if otherwise no information would be available.</t>
+
+    <t>Based on each mechanism, we discuss deployment incentives of each involved party. There must be clear incentives for each party to justify the proposed information exposure and at best an incremental deployment strategy. Finally, we discuss potential privacy concerns regarding the information to be exposed, as well as potential security issues of the proposed mechanisms.</t>
 
      <section title="Requirements Language">
        <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
@@ -58,7 +62,6 @@
    </section>
 
    <section anchor="udp" title="Firewall Traversal">
-	<t></t>
        <section title="Problem Statement">
            <t>Today UDP is often blocked by firewalls either completely or only enable for a few well-known application. However, this makes this hard to deploy new services on top of UDP.</t>
 
@@ -98,12 +101,12 @@
    <t></t>
        <section title="Problem Statement">
            <t>Even if the transport protocol implements a close-down mechanism or SPUD explicitly provides an end of tube signal, a network device cannot assume that these signals are provided reliably. Therefore each network device that holds per-flow/per-tube state must implement a mechanism to remove the state if no traffic that is matching this state information has been observer for a while. Usually this is realized by maintaining a timeout since the last observed packet.</t>
-           
+
            <t>An endpoint, that wants to keep a connection open even when not sending any data for a while, might need to send heartbeat packets to keep state alive that potentially is store somewhere on the network path. However, the timeout period of the network device storing this information is not know to the endpoint. Therefore it either has to send heartbeat in very short occurrence or might assume a default value of 150ms that is often used today.</t>
        </section>
        <section title="Information Exposure">
            <t>SPUD can be used to request the timeout used by a middlebox. As SPUD-enabled endpoint therefore an path-to-end element that is initialized with an non-valid value (e.g. 0) and midpoint can update this information a timeout is used to maintain per-tube state. As multiple network devices might be on a path that maintain per-tube state, the timeout information should only be updated to a lower value. A sender could also initial the timeout value to the minimum heartbeat frequency it will use or the maximum idle period (if known). However, in this case it is not know if there are only middleboxes on the path that have a larger timeout or if non of the middlebox on path where able to understand this SPUD information.</t>
-           
+
            <t>[Editor's note: Would it be necessary/useful to get a (separate) confirmation from each middlebox that has understood and read this SPUF information? Alternatively, it would maybe be useful signal the proposed heartbeat period separately, however that's also complicated because the endpoint might adapt it's heartbeat period based on the timeout information...]</t>
        </section>
        <section title="Mechanism">
@@ -199,7 +202,7 @@
        <section title="Information Exposure">
            <t>A SPUD sender can indicate a lower priority relatively to another tube that is used by the same sender. As the tube ID should be hard to guess, knowing the tube ID is a strong indication that the sender has on path knowledge.</t>
 
-           <t>Similarly, a lower packet priority within one flow could be indicated to give one packet a low priority than other packets with the same tube ID. This information can be used to preferential drop less inportant packets e.g. carrying information that could be recovered by FEC or where missing data can be easily concealed.</t> 
+           <t>Similarly, a lower packet priority within one flow could be indicated to give one packet a low priority than other packets with the same tube ID. This information can be used to preferential drop less inportant packets e.g. carrying information that could be recovered by FEC or where missing data can be easily concealed.</t>
 
 	<t>Further integration of codec and transport technology could even use more even finer grained priority levels to provide automatic graceful degradation of service within the network itself. </t>
 
@@ -207,7 +210,7 @@
        </section>
        <section title="Mechanism">
            <t><!--Preferential drop in case of congestion can then be implemented by on-path devices by translating yield instructions into priority queueing or other intra-domain signals (e.g. DSCP).-->
-Preferential dropping can be implemented by a router queue in case packets need to be dropped due to congestion. In this case the router might not drop the incoming packet but look for a packet with the same tube ID that is already in the queue and has a lower priority than to actual packet that should have been dropped. 
+Preferential dropping can be implemented by a router queue in case packets need to be dropped due to congestion. In this case the router might not drop the incoming packet but look for a packet with the same tube ID that is already in the queue and has a lower priority than to actual packet that should have been dropped.
 Note that a middlebox can only drop a different packet is there if currently a lower priority packet is queued. Therefore a middlebox might need to hold additional state. To not search the whole queue every time a packet has to be drop, the router might note the position of the last low priority packet of a tube in a separate table. The chance that a low priory packet of the same or corresponding tube currently sits in the queue, is lower the smaller the buffer is.</t>
 
 <t>Alternatively, the middlebox might queue the lower priority traffic in a different queue. Using a different queue might be suitable for lower flow priority but should not be used for lower priority packets within the same flow. Further, using a lower priority queue will not only give higher priority to the traffic belong to the same service/sender but also to all other competing flows. This is usually not the intention.</t>
