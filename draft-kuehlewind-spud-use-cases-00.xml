@@ -208,9 +208,9 @@
 	<t>[Editor's note: do we want to also provide per-packet information over spud? Or would all lower priority packets of one flow simply below to a different tube? In this case can we send a SPUD start message with more than on tube ID?]</t>
        </section>
        <section title="Mechanism">
-           <t><!--Preferential drop in case of congestion can then be implemented by on-path devices by translating yield instructions into priority queueing or other intra-domain signals (e.g. DSCP).--> <!-- WORK POINTER reviewed by bht to here -->
+           <t><!--Preferential drop in case of congestion can then be implemented by on-path devices by translating yield instructions into priority queueing or other intra-domain signals (e.g. DSCP).-->
 Preferential dropping can be implemented by a router queue in case packets need to be dropped due to congestion. In this case the router might not drop the incoming packet but look for a packet with the same tube ID that is already in the queue and has a lower priority than to actual packet that should have been dropped.
-Note that a middlebox should only drop a different packet if there is currently a lower priority packet is queued becaus it otherwise does not kow if it will every see a lower priority packet for this flow which could cause unfairness issues. Therefore a middlebox might need to hold additional state. To not search the whole queue every time a packet has to be dropped, the router might remeber the position of the last low priority packet of each tube in a separate table. The chance that a low priory packet of the same or corresponding tube currently sits in the queue, is lower the smaller the buffer is. Therefore for low-latency, real-time services, there is a tradeoff.</t>
+Note that a middlebox should only drop a different packet if there is currently a lower priority packet in the queue, because it otherwise does not know whether it will every see a lower priority packet for this flow. This could cause unfairness issues. Therefore a middlebox might need to hold additional state, e.g. keeping position of the last low priority packet of each tube in a separate table. The chance that a low priority packet of the same or corresponding tube currently sits in the queue, is lower the smaller the buffer is. Therefore for low-latency, real-time services, there is a tradeoff.</t>
 
 <t>Alternatively, the middlebox might queue the lower priority traffic in a different queue. Using a different queue might be suitable for lower flow priority but should not be used for lower priority packets within the same flow as this can also lead to other issues such as high reordering. Further, using a lower priority queue will not only give higher priority to the traffic belong to the same service/sender but also to all other competing flows. This is usually not the intention.</t>
 
@@ -228,7 +228,7 @@ Note that a middlebox should only drop a different packet if there is currently 
        </section>
    </section>
 
-   <section anchor="diag" title="Network Diagnostics">
+<!--   <section anchor="diag" title="Network Diagnostics">
        <t>text</t>
        <section title="Problem Statement">
            <t>[What's the difference to ICMP...? its better thats the difference :) brian to write this section]</t>
@@ -244,10 +244,10 @@ Note that a middlebox should only drop a different packet if there is currently 
        </section>
        <section title="Trust and Privacy">
        </section>
-   </section>
+   </section>-->
 
    <section anchor="Acknowledgements" title="Acknowledgements">
-     <t>None so far.</t>
+     <t>This document grew in part out of discussions of initial use cases for middlebox cooperation at the IAB SEMI Workshop and the IETF 92 SPUD BoF; thanks to the participants. </t>
    </section>
 
    <section anchor="IANA" title="IANA Considerations">
@@ -255,7 +255,7 @@ Note that a middlebox should only drop a different packet if there is currently 
    </section>
 
    <section anchor="Security" title="Security Considerations">
-     <t>No security considerations.</t>
+     <t>Security and privacy considerations for each use case are given in the corresponding subsection.</t>
    </section>
  </middle>
 
