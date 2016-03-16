@@ -1,24 +1,4 @@
-# Use Cases for a Substrate Protocol for User Datagrams (SPUD)
-
-This is the working area for the Individual internet-draft, "Use Cases for a Substrate Protocol for User Datagrams (SPUD)".
-
-* [Editor's copy](https://stackevo.github.io/spuduse/)
-* [Individual Draft] (https://tools.ietf.org/html/draft-kuehlewind-spud-use-cases)
-
-
-## Building the Draft
-
-Formatted text and HTML versions of the draft can be built using `make`.
-
-```sh
-$ make
-```
-
-This requires that you have the necessary software installed.  See [the
-instructions](https://github.com/martinthomson/i-d-template/blob/master/doc/SETUP.md).
-
-
-## Contributing
+# Contributing
 
 Before submitting feedback, please familiarize yourself with our current issues
 list and review the [working group
