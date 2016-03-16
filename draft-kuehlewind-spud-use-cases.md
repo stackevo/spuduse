@@ -35,6 +35,7 @@ author:
 informative:
   I-D.hildebrand-spud-prototype:
   I-D.trammell-spud-req:
+  I-D.ietf-ippm-6man-pdm-option:
 
 
 --- abstract
@@ -100,15 +101,16 @@ need an explicit contract, as is done implicitly with TCP today.
 
 To maintain state in the network, it must be possible to easily assign each
 packet to a session that is passing a certain network node. This state should
-be bound to something beyond the five-tuple to link packets together. In 
-{{I-D.trammell-spud-req}} we propose the use of identifiers "tubes". This allows
-for differential treatment of different packets within one five-tuple flow,
-presuming the application has control over segmentation and can provide
-requirements on a per-tube basis. Tube IDs must be hard to guess: a tube ID in
-addition to a five-tuple as an identifier, given significant entropy in the
-tube ID, provides an additional assurance that only devices along the path or
-devices cooperating with devices along the path can send packets that will be
-recognized by middleboxes and endpoints as valid.
+be bound to something beyond the five-tuple to link packets together. In
+{{I-D.trammell-spud-req}} we propose the use of identifiers for groups of
+packets, called ("tubes"). This allows for differential treatment of different
+packets within one five-tuple flow, presuming the application has control over
+segmentation and can provide requirements on a per-tube basis. Tube IDs must
+be hard to guess: a tube ID in addition to a five-tuple as an identifier,
+given significant entropy in the tube ID, provides an additional assurance
+that only devices along the path or devices cooperating with devices along the
+path can send packets that will be recognized by middleboxes and endpoints as
+valid.
 
 Further, to maintain state, the sender must explicitly indicate the start and
 end of a tube to the path, while the receiver must confirm connection
@@ -181,6 +183,21 @@ explicit and accessible without specific higher-layer/application-level
 knowledge.
 
 
+# Firewall Policy Feedback 
+
+## Problem Statement 
+
+[EDITOR'S NOTE: difficult to debug ACLs. ICMP doesn't work. Intercepting middleboxes like captive portals break in an encrypted world. ]
+
+## Information Exposed
+
+## Mechanism
+
+## Deployment Incentives
+
+## Security, Privacy, and Trust
+
+
 
 # State Lifetime Discovery
 
@@ -200,7 +217,6 @@ potentially is store somewhere on the network path. However, the timeout
 period of the network device storing this information is unknow to the
 endpoint. Therefore it has to send heartbeat fairly rapidly, or might assume a
 default value of 150ms that is commonly used today.
-
 
 ## Information Exposed
 
@@ -285,6 +301,19 @@ periods, the timeout interval could be reduced.
 [Editor's note: no trust needed here as discussed above... right? And I currently don't see privacy issues here...?']
 
 [Editor's note: Make sure this is not a vector for simplified state exhaustion attacks...? Don't think it's worse than TCP...? Any other attacks?]
+
+
+# MTU Discovery
+
+## Problem Statement
+
+## Information Exposed
+
+## Mechanism
+
+## Deployment Incentives
+
+## Security, Privacy, and Trust
 
 
 
@@ -565,52 +594,99 @@ As only lower priority should be indicated, it is harder to use this information
 
 [Editor's note: Do not really see any trust or privacy concerns here...?]
 
-
-# In-Band Diagnostics and Measurement {#diag}
+# In-Band Measurement {#meas}
 
 ## Problem Statement
 
 The current Internet protocol stack has very limited facilities for network
 measurement and diagnostics. The only explicit measurement feature built into
-the stack is ICMP Echo ("ping"), and diagnostic messages derived from ICMP
-messages may not make it to applications, whether due to the blocking of ICMP
-traffic for dubious operational reasons or narrow APIs.
-
-In the meantime, the Internet measurement community has defined many
-inference- and assumption-based approaches for getting better information out
-of the network: traceroute and BGP looking glasses for topology information,
-TCP sequence number and TCP timestamp based approaches for latency and loss
-estimation, and so on. Each of these uses values placed on the wire for the
-internal use of the protocol, not for measurement purposes, and do not
-necessarily apply to the deployment of new protocols or changes to the use of
-those values by protocol implementations. Approaches involving the encryption
-of transport protocol and application headers (indeed, including that the
-authors advance in {{I-D.trammell-spud-req}}) will break most of these, as well.
+the stack is ICMP Echo ("ping"). In the meantime, the Internet measurement
+community has defined many inference- and assumption-based approaches for
+getting better information out of the network: traceroute and BGP looking
+glasses for topology information, TCP sequence number and TCP timestamp based
+approaches for latency and loss estimation, and so on. Each of these uses
+values placed on the wire for the internal use of the protocol, not for
+measurement purposes, and do not necessarily apply to the deployment of new
+protocols or changes to the use of those values by protocol implementations.
+Approaches involving the encryption of transport protocol and application
+headers (indeed, including that the authors advance in {{I-D.trammell-spud-
+req}}) will break most of these, as well.
 
 Replacing the information used for measurement with values defined explicitly
 to be used for measurement in a transport protocol independent way allows
 explicit endpoint control of measurability and measurement overhead.
 
+We note that current work in IPPM {{I-D.ietf-ippm-6man-pdm-option}} proposes a
+roughly equivalent, IPv6-only, kernel-implementation-only facility.
+
 ## Information Exposed
 
 The "big five" metrics -- latency, loss, jitter, data rate / goodput, and
 reordering -- can be measured using a relatively simple set of primitives.
-Packet receipt acknowledgment using a cumulative packet nonce counter allows
+Packet receipt acknowledgment using a cumulative nonce echo allows
 both endpoint and on-path measurement of loss and reordering as well as
 goodput (when combined with layer 3 packet length headers). A timestamp echo
-facility, analogous to TCP's timestamp option but using an explicitly defined, constant-rate clock and exposure of local delta (time between receipt and subsequent transmission). In short, the information exposed is no more than that currently exposed by TCP, but defined in a way to be 
+facility, analogous to TCP's timestamp option but using an explicitly defined,
+constant-rate clock and exposure of local delta (time between receipt and
+subsequent transmission). 
+
+The cumulative nonce echo consists of two values: a number identifying a given
+packet (nonce), which also identifies all retransmissions of the packet, and a
+number which is the sum of all packet identifiers received from the remote
+endpoint (echo), modulo the maximum value of the echo field. Nonces need not
+be sequential, or even monotonic, but two packets with the same nonce should
+not be simultaneously in flight. These are exposed on a per-packet basis, but
+need not appear on every packet in the tube or flow, with the caveat that
+lower sampling rates lead to lower sensitivity.
+
+The timestamp echo consists of three values: The time in terms of ticks of a
+constant rate clock that a packet is sent, the echo of the last such timestamp
+received from the remote endpoint, and the number of ticks of the sender's
+clock between the receipt of the last timestamp from the remote endpoint and
+the transmission of the packet containing the echo. This last delta value is
+the missing link in TCP sequence number based and timestamp option based
+latency estimation.
+
+The information exposed is roughly equivalent than that currently exposed by
+TCP as a side effect of its operation, but defined such that they are
+explicitly useful for measurement, useful regardless of transport protocol,
+and such that information exposure is in the explicit control of the endpoint
+(when the superstrate transport protocol's headers are encrypted).
 
 ## Mechanism
 
-[TODO]
+The nonce and timestamp echo information, emitted as per-packet signals in the
+SPUD header, can be used by any device which can see it to estimate
+performance metrics on a per-tube basis. This includes both remote endpoints,
+as well as passive performance measurement devices colocated with network
+gateways.
 
 ## Deployment Incentives
 
-[TODO]
+Initial deployment of this facility is most likely in closed networks such as
+enterprise data centers, where a single administrative entity owns the network
+and the endpoints, can control which flows and tubes are annotated with
+measurement information, and can benefit from the additional insight given
+during network troubleshooting by explicit measurement headers. Once the
+facility is deployed in SPUD-aware endpoints, it can also be used for inter-
+network and cross-Internet performance measurement and debugging.
 
 ## Security, Privacy, and Trust
 
-[TODO]
+The cumulative nonce and timestamp echos leak no more information about the
+traffic than the TCP header does. Indeed, since the cumulative nonce does not
+include sequence number information or other protocol-internal information, it
+allows passive measurement of loss and latency without giving measurement
+devices access to information they could use to spoof valid packets within a
+transport layer connection. 
+
+In order to prevent middleboxes from modifying measurement-relevant
+information, these per-packet signals will need to be integrity protected by
+SPUD.
+
+Performance measurement boxes at gateways which observe and aggregate these
+signals will necessarily need to trust their accuracy, but can verify their
+plausibility by calculating nonce sums and synchronizing timing clocks.
 
 
 # IANA Considerations
@@ -625,8 +701,8 @@ corresponding Security, Privacy, and Trust subsection.
 # Acknowledgments
 
 This document grew in part out of discussions of initial use cases for
-middlebox  cooperation at the IAB SEMI Workshop and the IETF 92 SPUD BoF;
-thanks to the participants. {{diag}} is based in part out of discussions and
+middlebox cooperation at the IAB SEMI Workshop and the IETF 92 SPUD BoF;
+thanks to the participants. {{meas}} is based in part on discussions and
 ongoing work with Mark Allman and Rob Beverly.
 
 This work is supported by the European Commission under Horizon 2020 grant
