@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="US-ASCII"?>
 <!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
 
+<!--<!ENTITY I-D.trammell-spud-req SYSTEM "http://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.trammell-spud-req.xml">-->
+
 ]>
 <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
 <?rfc strict="yes" ?>
@@ -26,6 +28,18 @@
        </postal>
        <email>mirja.kuehlewind@tik.ee.ethz.ch</email>
      </address>
+   </author>
+   
+   <author fullname="Brian Trammell" initials="B"
+       surname="Trammell">
+       <organization>ETH Zurich</organization>
+       <address>
+           <postal>
+               <street></street>
+               <city>Zurich, Switzerland</city>
+           </postal>
+           <email>ietf@trammell.ch</email>
+       </address>
    </author>
 
    <date year="2015" />
@@ -261,26 +275,29 @@ Note that a middlebox should only drop a different packet if there is currently 
 
  <back>
 
-   <references title="Normative References">
-     &RFC2119;
+   <!--<references title="Normative References">-->
+     <!--&RFC2119;-->
+   <!--</references>-->
 
-     <!--<reference anchor="min_ref">
+   <references title="Informative References">
+       
+       <!--&I-D.trammell-spud-req;-->
+       <reference anchor="I-D.trammell-spud-req">
+           <front>
+               <title>Requirements for the design of a Substrate Protocol for User Datagrams (SPUD): draft-trammell-stackevo-spud-req-00 (To be published soon)</title>
+               
+               <author initials="B." surname="Trammell">
+                   <organization></organization>
+               </author>
+               <author initials="M." surname="Kuehlewind">
+                   <organization></organization>
+               </author>
+               
+               <date year="2015" />
+           </front>
+       </reference>
 
-       <front>
-         <title>Minimal Reference</title>
-
-         <author initials="authInitials" surname="authSurName">
-           <organization></organization>
-         </author>
-
-         <date year="2015" />
-       </front>
-     </reference>-->
    </references>
-
-   <!--<references title="Informative References">
-
-   </references>-->
 
    <!-- Change Log
 
