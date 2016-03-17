@@ -612,7 +612,7 @@ automatic graceful degradation of service within the network itself.
 ## Deployment Incentives
 
 Deployment incentives for priority multiplexing are similar to those for
-bandwidth declaration for app-limited flows as in {{applimited-incentives}}:
+bandwidth declaration for app-limited flows as in {{applimited-incentive}}:
 endpoints that correctly declare priority information will experience better
 quality of service on SPUD-enabled networks, and SPUD-enabled networks get
 information that allows them to better manage traffic.
