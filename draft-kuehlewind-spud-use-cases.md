@@ -473,7 +473,7 @@ middlebox.
 
 
 
-# Reordering Sensitive Services
+# Reordering Sensitive  {#reorder}
 
 ## Problem Statement
 
@@ -507,7 +507,7 @@ No trust relationship is needed as the provided information do not results in a 
 
 
 
-# Application-Limited Flows
+# Application-Limited Flows {#applimited}
 
 ## Problem Statement
 
@@ -560,14 +560,14 @@ might prioritize this flow for a certain (short) time to enable a smoother
 transition.
 
 
-## Deployment Incentives
+## Deployment Incentives {#applimited-incentive}
 
 Endpoints that indicate maximum sending rate for application-limited traffic
 on SPUD-aware networks allow the operators of those networks to better handle
 traffic. This can benefit the service quality and increase the user's
 satisfaction with the provided network service.
 
-Currently application have no good indication when to change their coding
+Currently applications have no good indication when to change their coding
 rate. Rate increases are especially hard. Further, frequent rate changes
 should be avoided for quality of experience. Cooperative indication of
 intended and available sending rate for application-limited flows can simplify
@@ -584,76 +584,51 @@ Both endpoints and SPUD-aware middleboxes should react defensively to rate limit
 ## Problem Statement
 
 Many services require multiple parallel transmissions to transfer different
-kinds of data which usually have a clear priority between each other. One
-example is WebRTC where the audio is most important and should be higher
-prioritized than the video, while control traffic might have the lowest
-priority. Further, some packets within one flow might be more important than
-others within the same flow/tube, e.g. such as I-frames in video
-transmissions. However, today a network will treat all packets the same in
+kinds of data which have clear priority relationships among them. For example,
+in WebRTC, audio frames should be prioritized over video frames. Sometimes
+these transmissions happen in different flows, and sometimes some packets
+within a flow have higher priority than others, for example I-frames in video
+transmissions. However, current networks will treat all packets the same in
 case of congestion and might e.g. drop audio packets while video and control
 traffic are still transmitted.
 
 ## Information Exposed
 
-A SPUD sender may indicate a lower priority relative to another tube that is
-used in the same 5-tuple.
+A SPUD sender may indicate a that one tube should "yield" to another, i.e.
+that it should have lower relative priority than another tube in the same
+flow. Similarly, individual packets within a tube could be marked as having
+lower priority. This information can be used to preferentially drop less
+important packets e.g. carrying information that could be recovered by FEC.
 
-Similarly, a lower packet priority within one flow/tube could be indicated to
-give one packet a low priority than other packets with the same tube ID. This
-information can be used to preferentially drop less inportant packets e.g.
-carrying information that could be recovered by FEC or where missing data can
-be easily concealed. 
-
-Further, with a stronger integration of codec and transport technology SPUD
+With a stronger integration of codec and transport protocols, SPUD
 could even indicate more fine-grained priority levels to provide
 automatic graceful degradation of service within the network itself.
 
-[Editor's note: do we want to also provide per-packet information over spud? Or would all lower priority packets of one flow simply below to a different tube? In this case can we send a SPUD start message with more than on tube ID?]
-
 ## Mechanism
 
-Preferential dropping can be implemented by a router queue in case packets
-need to be dropped due to congestion. In this case the router might not drop
-the incoming packet but look for a packet with the same tube ID that is
-already in the queue and has a lower priority than to actual packet that
-should have been dropped.
+[Mirja will write - fairness is hard.]
 
-Note that a middlebox should only drop a different packet if there is
-currently a lower priority packet in the queue, because it otherwise does not
-know whether it will every see a lower priority packet for this flow. This
-could cause unfairness issues. Therefore a middlebox might need to hold
-additional state, e.g. keeping position of the last low priority packet of
-each tube in a separate table. The chance that a low priority packet of the
-same or corresponding tube currently sits in the queue, is lower the smaller
-the buffer is. Therefore for low-latency, real-time services, there is a
-tradeoff.
-
-Alternatively, the middlebox might queue the lower priority traffic in a
-different queue. Using a different queue might be suitable for lower flow
-priority but should not be used for lower priority packets within the same
-flow as this can also lead to other issues such as high reordering. Further,
-using a lower priority queue will not only give higher priority to the traffic
-belong to the same service/sender but also to all other competing flows. This
-is usually not the intention.
-
-[Editor's note: Does it makes sense to, in addition, rate-limit the higher prirority flows to their current rate to make sure that the bottleneck is not further overloaded...?]
-
-If a sender has indicated lower priority to certain tubes and only experiences
-losses/congestion for the lower priority tubes, the sender should still not
-increase its sending for the higher priority tube and might even consider to
-decrease the sending rate for the higher prioroty tubes as well. Potentially a
-(delay-based) mechanism for shared bottleneck detection should be used to
-ensure that all transmissions actually share the same bottleneck.
 
 ## Deployment Incentives
 
-[Editor's note: similar as above -> support of interactive services increases costumer satisfaction...]
+Deployment incentives for priority multiplexing are similar to those for
+bandwidth declaration for app-limited flows as in {{applimited-incentives}}:
+endpoints that correctly declare priority information will experience better
+quality of service on SPUD-enabled networks, and SPUD-enabled networks get
+information that allows them to better manage traffic.
 
 ## Security, Privacy, and Trust
 
-As only lower priority should be indicated, it is harder to use this information for an attack.
+Since yield information can only be used to disadvantage an application's
+traffic relative to its own traffic, there is no incentive for applications to
+declare incorrect yielding.
 
-[Editor's note: Do not really see any trust or privacy concerns here...?]
+The pattern and relative volume of traffic in different yield classes may be
+used to "fingerprint" certain applications, though it is not clear whether
+this provides additional information beyond that contained inter-packet delay
+and volume patterns.
+
+
 
 # In-Band Measurement {#meas}
 
