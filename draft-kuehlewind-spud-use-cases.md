@@ -299,7 +299,11 @@ follow them. All timeout proposals and minimum timeouts must therefore be
 inputs to a dynamic timeout selection process, both at endpoints and on-path
 devices, which use these signals as hints but clamp their timeouts to sane values set by local policy.
 
-While device timeout and heartbeat interval are generally not linked to privacy-sensitive information, a timeout proposal may add a number of bits of entropy to an endpoint's unique fingerprint. It is therefore advisable to suggest a small number of useful timeout proposals, in order to reduce this value's contribution to an endpoint fingerprint.
+While device timeout and heartbeat interval are generally not linked to
+privacy-sensitive information, a timeout proposal may add a number of bits of
+entropy to an endpoint's unique fingerprint. It is therefore advisable to
+suggest a small number of useful timeout proposals, in order to reduce this
+value's contribution to an endpoint fingerprint.
 
 
 # Firewall Policy Feedback 
@@ -315,8 +319,6 @@ While device timeout and heartbeat interval are generally not linked to privacy-
 ## Deployment Incentives
 
 ## Security, Privacy, and Trust
-
-
 
 
 # MTU Discovery
@@ -431,6 +433,18 @@ delay or low delay and potential high loss. Therefore there is no incentive
 for lying. A simple classification of traffic in loss-sensitive and latency-
 sensitive does not expose privacy-critical information about the user's
 behavior.
+
+# Reordering Sensitive Services
+
+## Problem Statement
+
+## Information Exposed
+
+## Mechanism
+
+## Deployment Incentives
+
+## Security, Privacy, and Trust
 
 
 
