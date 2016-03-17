@@ -505,105 +505,79 @@ Applications that are not loss-sensitive (because they e.g. uses FEC) usually ar
 
 No trust relationship is needed as the provided information do not results in a preferential treatment. Only transport semantics are exposed that to not contain any private information. No security threats are known.
 
+
+
 # Application-Limited Flows
 
 ## Problem Statement
 
-Today, there are a large number of flows that are mostly application-limited,
-where the application can adapt this limit to changing traffic conditions. An
-example is unicast streaming video where the coding rate can be adapted based
-on detected congestion or changing link characteristics. This adaptation is
-difficult, since cross-traffic (much of which uses TCP congestion control)
-will often probe for available bandwidth more aggressively than the
-application's control loop. Further complicating the situation is the fact
-that rate adaptation may have negative effects on the user's quality of
+Many flows are application-limited, where the application itself adapts the
+limit to changing traffic conditions or link characteristics, such as with
+unicast adaptive bitrate streaming video. This adaptation is difficult, since
+TCP cross-traffic will often probe for available bandwidth more aggressively
+than the application's control loop. Further complicating the situation is the
+fact that rate adaptation may have negative effects on the user's quality of
 experience, and should therefore be done infrequently.
 
 ## Information Exposed
 
-With SPUD, the sender can provide an explicit indication of the maximum data
-rate that the current encoding needs. This can provide useful information to
-the bottleneck to decide how to correctly treat the corresponding tube, e.g.
-setting a rate limit or scheduling weight if served from its own queue.
+A SPUD endpoint sending application-limited traffic can provide an explicit
+per-tube indication of the maximum intended data rate needed by the current
+encoding or data source. If the bottleneck device is SPUD-aware, it can  use
+this information to decide how to correctly treat the tube, e.g. setting a
+rate limit or scheduling weight if served from its own queue.
 
-Further, a network node that imposes rate shaping could expose the rate limit
-to the sender if requested. This would help the sender to choose the right
-encoding and simplifies probing. If the rate limited is changed the network
-node might want to signal this change without being requested for it.
+A SPUD endpoint could also send a "minimum rate limit accumulation" request,
+similar to the other accumulation requests outlined above, where SPUD-aware
+routers and middleboxes could note the maximum bandwidth available to a tube.
+Receiving this signal on a feedback channel could allow a sender to more
+quickly adapt its sending rate. This rate limit information might be derived
+from local per-flow or per-tube rate limit policy, as well as from current
+information about load at the router.
 
-In addition, both the endpoint as well as a middlebox could announce sudden
-changes in bandwidth demand/offer. While for the endpoint it might be most
-important to indicate that the bandwidth demand has increased, a middlebox
-could indicate if more bandwidth is (currently) available. Note that this
-information should only be indicated if the network node was previously the
-bottleneck/the out-going link is fully loaded. Further, if the information
-that bandwidth is available is provided to multiple endpoints at the same
-time, there is a higher risk of overloading the network as all endpoints might
-increase their rate at the same time.
-
-[Editor's note: Should a middlebox even indicate how much capacity is available.. or 1/n of the available capacity if indicated to n endpoints? But there might be a new bottleneck now...]
+These signals can be sent throughout the lifetime of the flow, to help adapt
+to changing application demands and/or network conditions.
 
 ## Mechanism
 
-If the maximum sending rate of a flow is exposed this information could be
-used to make routing decision, if e.g. two paths are available that have
-different link capacity and average load characteristics.
+Maximum expected data rate exposed by the endpoints could be used to make
+routing decisions and queue selection decisions at SPUD-aware routers, if
+different paths or queues with different capacity, delay, and load
+characteristics are available.
 
-Further, a network nodes, that receives an indication of the maximum rate
-limit for a certain tube, might decide to threat this flow in an own queue and
-prioritize this flow in order to keep the delay low as long as the indicated
-rate limit is not exceeded. This should only be done if there is sufficient
-capacity on the link (the average load over a previous time period has be low
-enough to serve an additional maximum traffic load as indicated by the rate
-limit) or the flow is known to have priority, e.g. based on additional out-of-
-band signaling. If the link, however, is currently congested, a middlebox
-might choose to ignore this information or indicate a lower rate limit.
+A SPUD-aware router that indicates a rate limit can be used by the sender to
+choose an encoding. However, the sender should still implement a mechanism to
+probe for available bandwidth to verify the provided information. As a certain
+rate limit is expected, the sender should probe carefully around this rate.
 
-If a network node indicates rate shaping, this information can be used by the
-sender to choose its current data/coding rate appropriately. However, a sender
-should still implement a mechanism to probe ifor available bandwidth to verify
-the provided information. As a certain rate limit is expected the sender
-should probe carefully around this rate.
+These mechanisms can also be used for rate increases. If a sender receives an
+indication that more bandwidth is available it should probe carefully, instead
+of switching to the higher rate immediately, and decrease its sensitivity to
+loss (e.g. through the use of additional FEC) which will provide additional
+protection as soon as the new capacity limit is reached. Likewise, a SPUD-
+aware router that receives an indication that a flow intends to increase its
+might prioritize this flow for a certain (short) time to enable a smoother
+transition.
 
-A network node might further indicate a different/lower rate limit during the
-transmission. However, in this case, it might be easy for an attacker to send
-a wrong rate limit, therefore an endpoint should not change its data rate
-immediately, but might be prepared to see higher losses rates instead.
-
-If a sender receives an indication that more bandwidth is available it should
-not just switch to a higher rate but probe carefully. Therefore it might step-
-wise increase its coding rate or first add additional FEC information which
-will increase the traffic rate on the link and at the same time provide
-additional protection as soon as the new capacity limit is reached.
-
-A network node that receives an indication that a flow will increase its rate
-abruptly, might prioritize this flow for a certain (short) time to enable a
-smoother transition. [Editor's node: Need to figure out if high loss/delay
-when the coding rate is increased is actually a problem and if so further
-evaluate if short-term prioritization helps.]
 
 ## Deployment Incentives
 
-By indicating a maximum sending rate a network operator might be able to
-better handle/schedule the current traffic. Therefore the network operator
-might be willing to support these kind of flows explicitly by trying to serve
-the flow with the requested rate. This can benefit the service quality and
-increase the user's satisfaction with the provided network service.
-
-If the maximum sending rate is known by the application, the application might
-be willing to expose this information if there is a chance that the network
-will try to support this flow by providing sufficient capacity.
+Endpoints that indicate maximum sending rate for application-limited traffic
+on SPUD-aware networks allow the operators of those networks to better handle
+traffic. This can benefit the service quality and increase the user's
+satisfaction with the provided network service.
 
 Currently application have no good indication when to change their coding
-rate. Especially, increasing the rate is hard. Further, it should be avoided
-to change the rate (forth and back) too often. An indication if and how much
-bandwidth is available, is therefore helpful for the application and can
-simplify probing (even though there will still and always be an additional
-control loop needed to react to congestion and for probing).
+rate. Rate increases are especially hard. Further, frequent rate changes
+should be avoided for quality of experience. Cooperative indication of
+intended and available sending rate for application-limited flows can simplify
+probing, and provide signals beyond loss to react effectively to congestion.
 
 ## Security, Privacy, and Trust
 
-[Editor's note: is there an attack possible by indicating a low limit (from or to the application)? Note, that the application should not rely on this information and still probe for more capacity (if needed) and react to congestion!]
+Both endpoints and SPUD-aware middleboxes should react defensively to rate limit and rate intention information. Endpoints and middleboxes should use measurement and probing to verify that rate information is accurate, but the exposed rate information can be used as hints to routing, scheduling, and rate determination processes.
+
+
 
 # Priority Multiplexing
 
