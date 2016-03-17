@@ -605,7 +605,7 @@ carrying information that could be recovered by FEC or where missing data can
 be easily concealed. 
 
 Further, with a stronger integration of codec and transport technology SPUD
-could even indicate more even finer grained priority levels to provide
+could even indicate more fine-grained priority levels to provide
 automatic graceful degradation of service within the network itself.
 
 [Editor's note: do we want to also provide per-packet information over spud? Or would all lower priority packets of one flow simply below to a different tube? In this case can we send a SPUD start message with more than on tube ID?]
@@ -728,9 +728,10 @@ Initial deployment of this facility is most likely in closed networks such as
 enterprise data centers, where a single administrative entity owns the network
 and the endpoints, can control which flows and tubes are annotated with
 measurement information, and can benefit from the additional insight given
-during network troubleshooting by explicit measurement headers. Once the
-facility is deployed in SPUD-aware endpoints, it can also be used for inter-
-network and cross-Internet performance measurement and debugging.
+during network troubleshooting by explicit measurement headers. 
+
+Further the provided measurement value can also be exposed by SPUD to the far-endpoint (superstrate or application) and therefore be used for performance enhancement on these layers. Once the facility is deployed in SPUD-aware endpoints, it can also be used for inter-
+network and cross-Internet performance measurement and debugging (replacing today's processing-expensive DPI mechanims).
 
 ## Security, Privacy, and Trust
 
