@@ -39,6 +39,7 @@ informative:
   I-D.hildebrand-spud-prototype:
   I-D.trammell-spud-req:
   I-D.ietf-ippm-6man-pdm-option:
+  I-D.you-tsvwg-latency-loss-tradeoff:
 
 
 --- abstract
@@ -370,43 +371,37 @@ protocol requirements.
 
 
 
-
 # Low-Latency Service
 
 ## Problem Statement
 
 Networks are often optimized for low loss rates and high throughput by
-providing large buffers that can absorb traffic spikes or rate variations and
-always holding enough data to keep the link full. This is beneficial for
+providing large buffers that can absorb traffic spikes and rate variations
+while  holding enough data to keep the link full. This is beneficial for
 applications like high-priority bulk transfer, where only the total transfer
-time is of interest. (High volume) interactive application, such as video
-calls, however, have very different requirements. Usually these application
-can tolerate high(er) loss rates, as they anyway cannot wait for missing data
-to be retransmitted, while having hard latency requirements necessary to make
-their service work.
+time is of interest. High-volume interactive applications, such as
+videoconferencing, however, have very different requirements. Usually these
+applications can tolerate higher loss rates, while having hard latency
+requirements.
 
-Large network buffers may induce high queuing delays due to greedy cross
-traffic using loss-based congestion control that periodically fills the
-buffer. In loss-based congestion control the sending rate is periodically
-increased until a loss is observed to probe for available bandwidth.
-Unfortunately, the queuing delay that is indices by this probing can downgrade
-the quality of experience for competing interactive applications or even make
-them simply unusable. Further, to co-exist with greedy flows that use loss-
-based congestion control, one has to react based on the same feedback signal
-(loss) and implement about the same aggressiveness than these competing flows.
+Large network buffers may induce high queuing delays due to cross traffic
+using loss-based congestion control, which must periodically fill the buffer
+to induce loss during probing for additional bandwidth. This queueing delay
+can negatively impact the quality of experience for competing interactive
+applications, even making them unusable.
 
 ## Information Exposed
 
-While large buffers that are able to absorb traffic spikes that are often
-induced by short bursts are beneficial for some applications, the queuing
-delay that might be induced by these large buffers is very harmful to other
-applications. We therefore propose an explicit indication of loss- vs.
-latency-sensitivity per SPUD tube. This indication does not prioritize one
-kind of traffic over the other: while loss-sensitive traffic might face larger
-buffer delay but lower loss rate, latency-sensitive traffic has to make
-exactly the opposite tradeoff.
+The simplest mechanism for solving this problem is to separate loss-sensitive
+from latency-sensitive traffic, as proposed using DSCP codepoints in {{I-D
+.you-tsvwg-latency-loss-tradeoff}}. This signal could also be emitted as a
+per-packet signal within SPUD, since DSCP codepoints are often used for
+internal traffic engineering and therefore cleared at network borders. This
+indication does not prioritize one kind of traffic over the other: while loss-
+sensitive traffic might face larger buffer delay but lower loss rate, latency-
+sensitive traffic has to make exactly the opposite tradeoff.
 
-Further, an application can indicate a maximum acceptable single-hop queueing
+An endpoint can also indicate a maximum acceptable single-hop queueing
 delay per tube, expressed in milliseconds. While this mechanism does not
 guarantee that sent packets will experience less than the requested delay due
 to queueing delay, it can significantly reduce the amount of traffic uselessly
@@ -415,37 +410,41 @@ along a path (usually only zero or one) will be full.
 
 ## Mechanism
 
-A middlebox may use the loss-/latency-sensitive signal to assign packet to the
-appropriate service if different services are implemented at this middlebox.
-Today's traffic, that does not indicate a low loss or low latency preference,
-would still be assigned to today's best-effort service, while a new low
-latency service would be introduced in addition.
+A middlebox may use the loss-/latency tradeoff signal to assign packet to the
+appropriate type of service, if different services are implemented at this
+middlebox. Traffic not indicating a low loss or low latency preference would
+still be assigned to today's best-effort service, while a new low latency
+service would be introduced in addition.
 
 The simplest implementation of such a low latency service (without disturbing
 existing traffic) is to manage traffic with the latency-sensitive flag set in
 a separate queue. This queue either, in itself, provides only a short buffer
 which induces a hard limit for the maximum (per-queue) delay or uses an AQM
-(such as PIE/ CoDel) that is configured to keep the queuing delay low.
+(such as PIE/CoDel) that is configured to keep the queuing delay low.
 
-In such a two-queue system the network provider must decides about bandwidth
+In such a two-queue system the network provider must decide about bandwidth
 sharing between both services, and might or might not expose this information.
 Initially there will only be a few flows that indicate low latency preference.
 Therefore at the beginning this service might have a low maximum bandwidth
-share assigned in the scheduler. However, the sharing ratio should be adopted
-to the traffic load/number of flows in each service class over time. This can
-be done manually by a network administrator or in an automated way.
+share assigned in the scheduler. However, the sharing ratio should be adapted
+to the traffic load/number of flows in each service class over long
+timescales.
 
-Applications and endpoints setting the latency sensitivity flag on a tube must be prepared to experience relatively higher loss rates on that tube, and might use techniques such as Forward Error Correction (FEC) to cope with these losses.
+Applications and endpoints setting the latency sensitivity flag on a tube must
+be prepared to experience relatively higher loss rates on that tube, and
+should use techniques such as Forward Error Correction (FEC) to cope with
+these losses.
 
-If in addition the maximum per-hop delay is indicated by the sender, a SPUD-
-aware router might  drop any packet which would be placed in a queue that has
+If a maximum per-hop delay is indicated by the sender, a SPUD-
+aware router might drop any packet which would be placed in a queue that has
 more than the maximum single-hop delay at that point in time before queue
 admission. Thereby the overall congestion can be reduced early instead of
 withdrawing the packet at the receiver after it has blocked network resources
-for other traffic. Alternatively, a SPUD-aware node might only remove the
-payload and add a SPUD error message, to report what the problem is.
+for other traffic.
 
-An endpoint indicating the maximum per-hop delay must be aware that is might face higher loss rates under congestion than competing traffic on the same bottleneck. Especially, packets might be dropped due to the maximium per-hop delay indication before any congestion notification is given to any other competing flows on the same bottleneck. This should considered in the congestion reaction as any loss should be consider as a sign for congestion.
+A transport protocol at an endpoint indicating the maximum per-hop delay must
+be aware that is might face higher loss rates under congestion than competing
+traffic on the same bottleneck.
 
 ## Deployment Incentives
 
@@ -458,17 +457,21 @@ Network operators have already realized a need to better support low latency
 services. However, they want to avoid any service degradation for existing
 traffic as well as risking stability due to large configuration changes.
 Introducing an additional service for latency-sensitive traffic that can exist
-in parallel to today's network service (or potentially fully replace today's
-service at some point in future...) helps this problem.
+in parallel to today's network service helps this problem.
 
 ## Security, Privacy, and Trust
 
-An application does not benefit from wronly indicating loss- or latency-
-sensitivity as it has to make a tradeoff between low loss and potential high
-delay or low delay and potential high loss. Therefore there is no incentive
-for lying. A simple classification of traffic in loss-sensitive and latency-
-sensitive does not expose privacy-critical information about the user's
-behavior.
+An application cannot benefit from wrongly indicating loss- or latency-
+sensitivity, as it has to make a tradeoff between low loss and potential high
+delay or low delay and potential high loss. 
+
+A simple classification of traffic as loss- or latency-sensitive does not
+expose privacy-critical information about the user's behavior; indeed, it
+exposes far less than presently used by DPI-based traffic classifiers that
+would be used to determine the latency sensitivity of traffic passing a
+middlebox.
+
+
 
 # Reordering Sensitive Services
 
