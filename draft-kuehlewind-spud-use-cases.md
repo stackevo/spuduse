@@ -163,7 +163,7 @@ If a firewall receives a SPUD message which does not indicate the start of a
 new tube and no state is available for this tube, it may decide to block the
 traffic. This can happen if the state has already timed out or if the traffic
 was rerouted. In addition a firewall may send an error message to the sender
-or the receiver indicatng that no state information are available. If the
+or the receiver indicating that no state information is available. If the
 sender receives such a message it can resend a start signal (potentially
 together with other tube state information) and continue its transmission.
 
@@ -189,115 +189,117 @@ space is sufficiently sparse to maintain the "hard to guess" property, and
 prevents tube IDs from being misused to track flows from the same endpoint
 across multiple addresses. This limitation may need further discussion.
 
-By providing information about connection lifetime, SPUD exposes information
+By providing information about connection setup, SPUD exposes information
 equivalent to that available in the TCP header. It makes connection lifetime
 information explicit and accessible without specific higher-layer/application-
 level knowledge.
 
 
 
-# State Lifetime Discovery
+# On-Path State Lifetime Discovery and Management
+
+Once the problem of connection setup is solved, the problem arises of managing the lifetime of state associated with that connection at various devices along the path: NAT and stateful firewall state timeouts are a common cause of connectivity issues in the Internet.
 
 ## Problem Statement
 
-Even if the transport protocol implements a close-down mechanism or SPUD
-explicitly provides an end of tube signal, a network device cannot assume that
-these signals are provided reliably. Therefore each network device that holds
-per-flow/per-tube state must implement a mechanism to remove the state if no
-traffic that is matching this state information has been observer for a while.
-Usually this is realized by maintaining a timeout since the last observed
-packet.
+Devices along the path that must keep state in order to function cannot assume
+that signals tearing down a connection are provided reliably. This is also the
+case for current TCP traffic. Therefore, all stateful on-path devices must
+implement a mechanism to remove the state if no traffic is seen for a given
+flow or tube for a while. Usually this is implemented by maintaining a timeout
+since the last observed packet.
 
-An endpoint that wants to keep a connection open even if it is not sending any
-data for a while might need to send heartbeat packets to keep state alive that
-potentially is store somewhere on the network path. However, the timeout
-period of the network device storing this information is unknow to the
-endpoint. Therefore it has to send heartbeat fairly rapidly, or might assume a
-default value of 150ms that is commonly used today.
+If the timeouts are set too low, on-path state might be discarded while the
+endpoint connection is still alive; in the case of firewalls and NATs, this
+can lead to unreliable connectivity. The common solution to this problem is
+for applications or transport protocols that do not have any productive
+traffic to send to send "heartbeat" or "keep-alive" packets to reset the state
+timeout along the path. However, since the minimum timeout along the path is
+unknown to the endpoint, implementers of transport and application . A default
+value of 150ms is commonly used today. This represents a fairly rapid
+generation of nonproductive traffic, and is especially onerous on battery-
+powered mobile devices, which must wake up radios and switch to a higher-power
+mode to transmit these nonproductive packets, leading to suboptimal power
+usage and shorter battery life.
 
 ## Information Exposed
 
-SPUD can be used to request the timeout used by a middlebox. As SPUD-enabled
-endpoint therefore sends a path-to-endpoint option that is initialized with an
-non-valid value (e.g. 0) and midpoints can update this information to the
-timeout value that is used to maintain per-tube state. As multiple network
-devices might be on a path that maintain per-tube state, the timeout
-information should only be updated to the minimum value. A sender could also
-initial the timeout value to the minimum heartbeat frequency it will use or
-the maximum idle period (if known).
+SPUD can be used to request that SPUD-aware middleboxes along the path expose
+their minimum state timeout value. Here, the sending endpoint sends a
+"accumulate minimum timeout" request along with some scratch space for
+middleboxes to place their timeout information in. Each middlebox inspects
+this value, and writes its own timeout only if lower than the present value.
 
-[Editor's note: Would it be necessary/useful to get a (separate) confirmation
-from each middlebox that has understood and read this SPUD information?
-Alternatively, it would maybe be useful signal the proposed heartbeat period
-separately, however that's also complicated because the endpoint might adapt
-it's heartbeat period based on the timeout information...]
+Applications may also send a "timeout proposal" to devices along the path
+using a SPUD declaration that a given tube will send a packet at least once
+per interval, and if no packet is seen within that interval, it is safe to
+tear down state.
+
+These two declarations may be used together, with middleboxes willing to use
+the application's value setting their timeouts on a per-tube basis, or
+exposing a lower timeout value to allow the application to adjust.
 
 ## Mechanism
 
-If a network device that uses a timeout to remove per-tube state receives a
-SPUD timeout information request, it should expose its own timeout value if
-smaller than the one already given in the SPUD header. Alternatively, if a
-value is already given, it might decide to use the given value as timeout for
-the state information of this tube.
+If a SPUD-aware middlebox that uses a timeout to clean up per-tube state
+receives a SPUD minimum timeout accumulation, it should expose its own timeout
+value if smaller than the one already given. Alternatively, if a value is
+already given, it might decide to use the given value as timeout for the state
+information of this tube. An endpoint receiving an accumulated minimum timeout
+should send it back to its remote via a feedback channel. Timeouts on each
+direction of a connection between two endpoints may, of course, be different,
+and are handled separately by this mechanism.
 
-A SPUD sender can request the timeout used by network devices on path to
-maintain state. If a minimum heartbeat frequency is used or the maximum idle
-period is known, the sender might pre-set this value. If the pre-set value is
-not changed, the sender does not know if there is at least one SPUD-aware
-middlebox on the path that understands the time-out information. In any case a
-sender must always assume that there could be additional non-SPUD aware
-middlebox that has a smaller timeout. Therefore even if the proposed timeout
-is used for heartbeating, traffic can still be blocked due to removed state.
-This is also the case if a middlebox did not correctly indicate its timeout
-value, e.g. when the value is dynamically changed to a smaller value if more
-state needs to be maintained. However, usually the number of middleboxes on
-the path that hold per-flow/tube state is low. Therefore the chance that the
-received feedback indicates the right timeout value is high.
+If a SPUD-aware middlebox that uses a timeout to clean up per-tube state
+receives a timeout proposal, it should set its timeout accordingly, subject to
+its own policy and configuration.
 
-[Editor's note: Do we need a SPUD message that can be initialized by the middlebox to et the endpoint know that the time has changed?]
+These mechanisms are of course completely advisory: there may be non-SPUD
+aware middleboxes on path which will ignore any proposed timeout and not
+expose their timeout information, and middleboxes must be configured with
+maximum timeout proposal they will accept in order to defend against state
+exhaustion attacks.
 
-A SPUD endpoint receiving a SPUD header with timeout information should
-reflect this information to the sender with the next packet that it will be
-sent (or after a short timeout). Therefore this information should be
-requested with the first packet, that should immediately trigger the receiver
-to at least send one packet. In addition SPUD-aware nodes on the backward path
-are able to also signal their timeout.
-
-[Editor's note: Is it necessary to have an explicit SPUD heartbeat packet, that should also be reflected by the receiver to keep state on the backwards path alive..? And then request timeouts for the forward and backward path separately?]
+Endpoints must therefore be combine the use of these signals endpoint with a
+dynamic timeout discovery and adaptation mechanism, which uses the signals to
+set initial guesses as to the path timeout.
 
 ## Deployment Incentives
 
 Initially, if not widely deployed, there will be not much benefit to using
-this extension. However, an endpoint can never be sure that all middleboxes on
-the path that maintain state information based on a timeout will expose this
-information (correctly).  An endpoint must always be prepared that traffic can
-be blocked (after an idle period) and the connection must be restarted. This
-is the same today if heartbeats are used. Therefore, SPUD will not help to
-simplify the implementation but it will also no make it much more complicated
-as only the heartbeat interval might be changed.
+this extension.
 
-However, under the assumption that there are usually only a small number of
-middbleboxes on one network path that hold (per-tube) state information, it is
-likely that if information is exposed by a middlebox, this information is
-correct and can be used.
+However, we can assume that there are usually only a small number of
+middleboxes on a given network path that hold per-tube state information.
+Endpoints have an incentive to request minimum timeout and to propose timeouts
+to improve convergence time for dynamic timeout adaptation mechanisms, and
+middleboxes have an incentive to cooperate to improve reliability of
+connections as well as state management. It is therefore likely that if
+information is exposed by a middlebox, this information is correct and can be
+used.
 
 The more SPUD gets deployed, the more often endpoints will be able to set the
-heartbeat interval correctly. This will reduce the number of unnecessary
-reconnects that cause additional latency. Further, an endpoint might be able
-to request a higher timeout by pre-setting the value.
+heartbeat interval correctly. This will reduce the amount of unproductive
+traffic as well as the number of reconnections that cause additional latency.
 
-Network nodes that understand the SPUD timeout information and expose their
-timeouts are able to handle timeouts more flexibly, e.g. announcing lower
-timeout values if space is sparse. Further if an endpoint announces a low pre-
-set value because the endpoint knows that it will only have short idle
+Likewise, SPUD-aware middleboxes that expose  timeout information are able to
+handle timeouts more flexibly, e.g. announcing lower timeout values when they
+have less space available for new state. Further if an endpoint announces a
+low pre-set value because the endpoint knows that it will only have short idle
 periods, the timeout interval could be reduced.
 
 
 ## Security, Privacy, and Trust
 
-[Editor's note: no trust needed here as discussed above... right? And I currently don't see privacy issues here...?']
+Timeout proposals increase the risk of state exhaustion attacks for SPUD-aware
+middleboxes that naively follow them. Likewise, accumulated minimum timeouts
+could be used by malicious middleboxes to induce floods of useless heartbeat
+traffic along the path, and/or exhaust resources on endpoints that naively
+follow them. All timeout proposals and minimum timeouts must therefore be
+inputs to a dynamic timeout selection process, both at endpoints and on-path
+devices, which use these signals as hints but clamp their timeouts to sane values set by local policy.
 
-[Editor's note: Make sure this is not a vector for simplified state exhaustion attacks...? Don't think it's worse than TCP...? Any other attacks?]
+While device timeout and heartbeat interval are generally not linked to privacy-sensitive information, a timeout proposal may add a number of bits of entropy to an endpoint's unique fingerprint. It is therefore advisable to suggest a small number of useful timeout proposals, in order to reduce this value's contribution to an endpoint fingerprint.
 
 
 # Firewall Policy Feedback 
