@@ -76,33 +76,44 @@ as well as potential security issues of the proposed mechanisms.
 
 
 
-# Firewall Traversal
+# Firewall Traversal for UDP-Encapsulated Traffic
+
+We presume, following an analysis of requirements in {{I-D.trammell-spud-
+req}}, as well as trends in transport protocol development (e.g. QUIC, the
+RTCWEB data channel) that UDP encapsulation will prove a viable approach for
+deploying new protocols in the Internet. This, however, leads us to a first
+problem that must be solved.
 
 ## Problem Statement
 
-Today UDP is often blocked by firewalls, or only enabled for a few well-known
-applications. However, this makes it hard to deploy new services on top of
-UDP.
+UDP is often blocked by firewalls, or only enabled for a few well-known
+applications (e.g. DNS, NTP). Recent measurement work has shown that somewhere
+between 4% and 8% of Internet hosts may be affected by UDP impairment,
+depending on the population studied. Some networks (e.g. enterprise networks
+behind corporate firewalls) are far more likely to block UDP than others (e.g.
+residential wireline access networks).
 
-For a long time UDP has not been used much for high volume traffic and
-therefore it was assumed that most UDP traffic is spam or attack traffic. This
-is not true anymore. The volume of (good) UDP traffic is growing, mostly due
-to voice and video (real-time) services, e.g. RTCWEB uses UDP for data and
-media, where TCP is not suitable anyway.
+In addition, some network operators assume that UDP is not often used for
+high-volume traffic, and is often a source of spoofing or reflected attack
+traffic, and is therefore safe to block or route-limit. This assumption is
+becoming less true than it once was: the volume of (good) UDP traffic is
+growing, mostly due to voice and video (real-time) services (e.g. RTCWEB)
+where TCP is not suitable.
 
-Even if firewall administrators are willing to implement new rules for UDP
-services, it is hard to track session state for UDP traffic. As UDP is
-unidirectional, it is unknown whether the receiver is willing to accept the
-connection. Further there is no way to figure how long state must be
-maintained once established. To efficiently establish state along the path we
-need an explicit contract, as is done implicitly with TCP today.
+Even if firewall vendors and administrators are willing to change firewall
+rules to allow more diverse UDP services, it is hard to track session state
+for UDP traffic. As UDP is unidirectional, it is unknown whether the receiver
+is willing to accept the connection. Further there is no way to figure how
+long state must be maintained once established. To efficiently establish state
+along the path we need an explicit contract, as is done implicitly with TCP
+today.
 
 ## Information Exposed
 
 To maintain state in the network, it must be possible to easily assign each
 packet to a session that is passing a certain network node. This state should
-be bound to something beyond the five-tuple to link packets together. In
-{{I-D.trammell-spud-req}} we propose the use of identifiers for groups of
+be bound to something beyond the five-tuple to link packets together.
+In {{I-D.trammell-spud-req}}, we propose the use of identifiers for groups of
 packets, called ("tubes"). This allows for differential treatment of different
 packets within one five-tuple flow, presuming the application has control over
 segmentation and can provide requirements on a per-tube basis. Tube IDs must
@@ -158,44 +169,30 @@ together with other tube state information) and continue its transmission.
 
 ## Deployment Incentives
 
-It is not expected that the provided SPUD information will enable all generic
-UDP-based services to safely pass firewalls , however, for new services that a
-firewall administrator is willing to allow, it makes state handling easier.
+The ability to use existing firewall management best practices with new
+transport services over SPUD is necessary to ensure the deployability of SPUD.
+In today's Internet, application developers really only have two choices for
+transport protocols: TCP, or transports implemented at the application layer
+and encapsulated over UDP. SPUD provides a common shim layer for the second
+case, and the firewall traversal facility it provides makes these transports more likely to deploy.
 
-For application developers that actually would like to use a new transport
-services, there are today often only two choices; encapsulation over UDP or
-over TCP. SPUD already provides encapsulation over UDP as well as maintains (a
-few) additional information about the network state. This shim layer can
-support application developers to more easily implement new services.
+It is not expected that the information provided by SPUD will enable all
+generic UDP-encapsulated transports to safely pass firewalls. However, it does
+make state handling easier for new services that a firewall administrator is
+willing to allow.
 
 ## Security, Privacy, and Trust
 
-We proposed to limit the scope of the tube ID to the five-tuple. While this
+The tube ID is scoped to the five-tuple. While this
 makes the tube ID useless for session mobility, it does mean that the valid ID
 space is sufficiently sparse to maintain the "hard to guess" property, and
 prevents tube IDs from being misused to track flows from the same endpoint
 across multiple addresses. This limitation may need further discussion.
 
-By providing information on the connection start up, SPUD only exposes
-information that are often already given in the higher layer semantics. Thus
-it does not expose additional information, it only makes the information
-explicit and accessible without specific higher-layer/application-level
-knowledge.
-
-
-# Firewall Policy Feedback 
-
-## Problem Statement 
-
-[EDITOR'S NOTE: difficult to debug ACLs. ICMP doesn't work. Intercepting middleboxes like captive portals break in an encrypted world. ]
-
-## Information Exposed
-
-## Mechanism
-
-## Deployment Incentives
-
-## Security, Privacy, and Trust
+By providing information about connection lifetime, SPUD exposes information
+equivalent to that available in the TCP header. It makes connection lifetime
+information explicit and accessible without specific higher-layer/application-
+level knowledge.
 
 
 
@@ -301,6 +298,23 @@ periods, the timeout interval could be reduced.
 [Editor's note: no trust needed here as discussed above... right? And I currently don't see privacy issues here...?']
 
 [Editor's note: Make sure this is not a vector for simplified state exhaustion attacks...? Don't think it's worse than TCP...? Any other attacks?]
+
+
+# Firewall Policy Feedback 
+
+## Problem Statement 
+
+[EDITOR'S NOTE: difficult to debug ACLs. ICMP doesn't work. Intercepting middleboxes like captive portals break in an encrypted world. ]
+
+## Information Exposed
+
+## Mechanism
+
+## Deployment Incentives
+
+## Security, Privacy, and Trust
+
+
 
 
 # MTU Discovery
