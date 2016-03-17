@@ -606,8 +606,19 @@ automatic graceful degradation of service within the network itself.
 
 ## Mechanism
 
-[Mirja will write - fairness is hard.]
+Designing a general-purpose mechanism that maps relative priorities from the
+yield information exposed via SPUD to correct per-tube and per-packet
+treatment at any point in the Internet, is an extremely hard problem and a
+possible subject for future research. It appears impossible at this writing to
+design a straightforward mapping function from these relative priorities per-
+flow to absolute priorities across flows in a fair way.
 
+However, in the not-uncommon case that exists in many access networks, where
+the bottleneck link has per-user queues and can enforce per-user fairness, the
+relative priorities can be mapped to absolute priorities, and simple priority
+queueing at the bottleneck can be used. Lower priority packets within a tube,
+however, should be assigned to the tube's priority class, and preferentially
+dropped instead, e.g. using a different drop threshold at the queue.
 
 ## Deployment Incentives
 
