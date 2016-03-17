@@ -33,6 +33,9 @@ author:
 
 
 informative:
+  RFC1191:
+  RFC1981:
+  RFC4821:
   I-D.hildebrand-spud-prototype:
   I-D.trammell-spud-req:
   I-D.ietf-ippm-6man-pdm-option:
@@ -246,7 +249,7 @@ receives a SPUD minimum timeout accumulation, it should expose its own timeout
 value if smaller than the one already given. Alternatively, if a value is
 already given, it might decide to use the given value as timeout for the state
 information of this tube. An endpoint receiving an accumulated minimum timeout
-should send it back to its remote via a feedback channel. Timeouts on each
+should send it back to its remote peer via a feedback channel. Timeouts on each
 direction of a connection between two endpoints may, of course, be different,
 and are handled separately by this mechanism.
 
@@ -305,33 +308,66 @@ entropy to an endpoint's unique fingerprint. It is therefore advisable to
 suggest a small number of useful timeout proposals, in order to reduce this
 value's contribution to an endpoint fingerprint.
 
+# Path MTU Discovery
 
-# Firewall Policy Feedback 
-
-## Problem Statement 
-
-[EDITOR'S NOTE: difficult to debug ACLs. ICMP doesn't work. Intercepting middleboxes like captive portals break in an encrypted world. ]
-
-## Information Exposed
-
-## Mechanism
-
-## Deployment Incentives
-
-## Security, Privacy, and Trust
-
-
-# MTU Discovery
+Similar to the state timeout problem is the Path MTU problem: differing MTUs on different devices along the path can lead to fragmentation or connectivity issues. This problem is made worse by the increasing proliferation of tunnels in the Internet, which reduce the MTU by the amount required for tunnel headers. 
 
 ## Problem Statement
 
+In order to efficiently send packets along a path end to end, they must be
+sized to fit in the MTU of the "narrowest" link along the path. Algorithms for
+path MTU discovery have been defined and standardized for a quarter century,
+in {{RFC1191}} for IPv4 and {{RFC1981}} for IPv6, but they are not often
+implemented due in part to widespread impairment of ICMP. Packetization Layer
+Path MTU Discovery {{RFC4821}} (PLPMTUD) is a more recent attempt to solve the problem,
+which has the advantage of being transport-protocol independent and functional
+without ICMP feedback. SPUD, as a shim between UDP and superstrate transport
+protocols, is at the right place in the stack to implement PLPMTUD, and
+explicit cooperation can enhance its operation.
+
 ## Information Exposed
+
+SPUD can be used to request that SPUD-aware middleboxes along the path expose
+their next-hop path MTU value. Here, the sending endpoint sends a "accumulate
+minimum MTU" request along with some scratch space for middleboxes to place
+the next-hop MTU for the given tube. Each middlebox inspects this value, and
+writes its own next-hop MTU only if lower than the present value.
+
+A SPUD-aware middlebox that receives a packet that is too big for the next-hop MTU can send back a signal associated with the tube directly to the sender, including the next-hop MTU.
 
 ## Mechanism
 
+PLPMTUD functions by dynamically increasing the size of packets sent, and
+reacting to the loss of the first "too large" packet as an MTU reduction
+signal, instead of a congestion signal. This must be implemented in
+cooperation with the superstrate transport protocol, as it is responsible for
+how non-MTU-related loss is treated.
+
+When an endpoint receives an accumulated minimum MTU, it should should send it
+back to its remote peer via a feedback channel. The minimum of this value and
+any direct next-hop MTU signals received from SPUD-aware middleboxes can be
+used as a hint to the sender's PLPMTUD process, as a likely upper bound for
+path MTU associated with a tube.
+
 ## Deployment Incentives
 
+As with state lifetime discovery, these signals are of little initial utility
+to endpoints before SPUD-aware middleboxes are deployed. However, SPUD-aware
+middleboxes that sit at potential MTU breakpoints along a path, either those
+which terminate tunnels or bridge networks with two different link types, have
+an incentive to improve reliability by responding to accumulation requests and
+sending next-hop MTU messages to SPUD-aware endpoints.
+
 ## Security, Privacy, and Trust
+
+As with state lifetime discovery, Minimum MTU and next-hop MTU signals could
+be used by malicious middleboxes to set the endpoint's maximum packet size to
+inefficiently small sizes, if the endpoint follows them naively. For that
+reason, endpoints should use this information only as hints to improve the
+operation of PLPMTUD, and may probe above the value derived from the SPUD-
+supplied information when deemed appropriate by endpoint policy or transport
+protocol requirements.
+
 
 
 
