@@ -631,7 +631,7 @@ carrying information that could be recovered by FEC or where missing data can
 be easily concealed. 
 
 Further, with a stronger integration of codec and transport technology SPUD
-could even indicate more even finer grained priority levels to provide
+could even indicate more fine-grained priority levels to provide
 automatic graceful degradation of service within the network itself.
 
 [Editor's note: do we want to also provide per-packet information over spud? Or would all lower priority packets of one flow simply below to a different tube? In this case can we send a SPUD start message with more than on tube ID?]
