@@ -102,7 +102,11 @@ future work.
 
 Additionally, this document follows the principle of least exposure: in each
 use case, we attempt to define the minimum amount of information exposed by
-endpoints and middleboxes that makes the
+endpoints and middleboxes required by the proposed mechanism to solve the
+identified problem. In addition to being good engineering practice, this
+approach reduces the risk to privacy through inadvertent irrelevant metadata
+exposure, and reduces the amount of information available for application
+fingerprinting.
 
 
 # Firewall Traversal for UDP-Encapsulated Traffic
