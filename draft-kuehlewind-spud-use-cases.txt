@@ -13,10 +13,12 @@ Expires: September 19, 2016                               March 18, 2016
 
 Abstract
 
-   This document identifies use cases for an encapsulation layer
-   providing explicit cooperation between endpoints and middleboxes in
-   the Internet under endpoint control.  These use cases range from
-   relatively low level applications (improving the ).  They are
+   This document identifies use cases for explicit cooperation between
+   endpoints and middleboxes in the Internet under endpoint control.
+   These use cases range from relatively low level applications
+   (improving the ability for UDP-based protocols to traverse firewalls)
+   through support for new transport services (in-flow prioritization
+   for graceful in-network degradation of media streams).  They are
    intended to provide background for deriving the requirements for a
    Substrate Protocol for User Datagrams (SPUD), as discussed at the IAB
    Stack Evolution in a Middlebox Internet (SEMI) workshop in January
@@ -48,8 +50,6 @@ Copyright Notice
    Provisions Relating to IETF Documents
    (http://trustee.ietf.org/license-info) in effect on the date of
    publication of this document.  Please review these documents
-   carefully, as they describe your rights and restrictions with respect
-   to this document.  Code Components extracted from this document must
 
 
 
@@ -58,6 +58,8 @@ Kuehlewind & Trammell  Expires September 19, 2016               [Page 1]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
    include Simplified BSD License text as described in Section 4.e of
    the Trust Legal Provisions and are provided without warranty as
    described in the Simplified BSD License.
@@ -66,11 +68,14 @@ Table of Contents
 
    1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
      1.1.  Principles and Assumptions  . . . . . . . . . . . . . . .   3
+       1.1.1.  Trust and Integrity . . . . . . . . . . . . . . . . .   4
+       1.1.2.  Endpoint Control  . . . . . . . . . . . . . . . . . .   4
+       1.1.3.  Least Exposure  . . . . . . . . . . . . . . . . . . .   4
    2.  Firewall Traversal for UDP-Encapsulated Traffic . . . . . . .   4
-     2.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .   4
+     2.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .   5
      2.2.  Information Exposed . . . . . . . . . . . . . . . . . . .   5
      2.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .   6
-     2.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .   6
+     2.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .   7
      2.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .   7
    3.  On-Path State Lifetime Discovery and Management . . . . . . .   7
      3.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .   7
@@ -91,21 +96,16 @@ Table of Contents
      5.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .  13
      5.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .  13
    6.  Reordering Sensitivity  . . . . . . . . . . . . . . . . . . .  13
-     6.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .  13
+     6.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .  14
      6.2.  Information Exposed . . . . . . . . . . . . . . . . . . .  14
-     6.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  14
+     6.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  15
      6.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .  15
      6.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .  15
    7.  Application-Limited Flows . . . . . . . . . . . . . . . . . .  15
      7.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .  15
-     7.2.  Information Exposed . . . . . . . . . . . . . . . . . . .  15
+     7.2.  Information Exposed . . . . . . . . . . . . . . . . . . .  16
      7.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  16
-     7.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .  16
-     7.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .  17
-   8.  Priority Multiplexing . . . . . . . . . . . . . . . . . . . .  17
-     8.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .  17
-     8.2.  Information Exposed . . . . . . . . . . . . . . . . . . .  17
-     8.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  17
+     7.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .  17
 
 
 
@@ -114,16 +114,21 @@ Kuehlewind & Trammell  Expires September 19, 2016               [Page 2]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
+     7.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .  17
+   8.  Priority Multiplexing . . . . . . . . . . . . . . . . . . . .  17
+     8.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .  17
+     8.2.  Information Exposed . . . . . . . . . . . . . . . . . . .  17
+     8.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  18
      8.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .  18
      8.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .  18
    9.  In-Band Measurement . . . . . . . . . . . . . . . . . . . . .  18
      9.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .  18
      9.2.  Information Exposed . . . . . . . . . . . . . . . . . . .  19
-     9.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  19
+     9.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  20
      9.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .  20
      9.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .  20
-   10. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  20
-   11. Security Considerations . . . . . . . . . . . . . . . . . . .  20
+   10. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  21
+   11. Security Considerations . . . . . . . . . . . . . . . . . . .  21
    12. Acknowledgments . . . . . . . . . . . . . . . . . . . . . . .  21
    13. Informative References  . . . . . . . . . . . . . . . . . . .  21
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  22
@@ -154,14 +159,9 @@ Internet-Draft               SPUD Use Cases                   March 2016
 
 1.1.  Principles and Assumptions
 
-   In this document, we assume no pre-existing trust relationship
-   between the communication endpoints and any middlebox or router on
-   the path.  We must therefore always assume that information that is
-   exposed can be incorrect, and/or that the information will be
-   ignored.
+   We make a few assumptions about first principles in elaborating these
+   use cases
 
-   This implies that while endpoints can verify the integrity of
-   information exposed by remote endpoints, they cannot verify the
 
 
 
@@ -170,31 +170,47 @@ Kuehlewind & Trammell  Expires September 19, 2016               [Page 3]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
+1.1.1.  Trust and Integrity
+
+   In this document, we assume no pre-existing trust relationship
+   between the communication endpoints and any middlebox or router on
+   the path.  We must therefore always assume that information that is
+   exposed can be incorrect, and/or that the information will be
+   ignored.
+
+   This implies that while endpoints can verify the integrity of
+   information exposed by remote endpoints, they cannot verify the
    integrity of information exposed by middleboxes.  Middleboxes cannot
    verify the integrity of any information at all.  In limited
    situations where a trust relationship can be established, e.g.,
    between a managed end-user device in an enterprise network and a
    corporate firewall, this verifiability can be improved.
 
-   We further assume that all communication from middleboxes happens
-   with explicit endpoint permission.  For that reason, the information
-   exposed by middleboxes in this document takes only two forms.  In the
-   first form, "accumulation", the endpoint creates space in the header
-   for middleboxes to use to signal to the remote endpoint, which then
-   sends the information back to the originating endpoint via a feedback
-   channel.  In the second form, the middlebox sends a packed directly
-   back to the endpoint with additional information about why a packet
-   was dropped.  Other communications patterns may be possible,
-   depending on the first principles chosen; this is a subject of future
-   work.
+1.1.2.  Endpoint Control
+
+   We further assume that all information exposure by middleboxes
+   happens under explicit endpoint control.  For that reason, the
+   information exposed by middleboxes in this document takes only two
+   forms.  In the first form, "accumulation", the endpoint creates space
+   in the header for middleboxes to use to signal to the remote
+   endpoint, which then sends the information back to the originating
+   endpoint via a feedback channel.  In the second form, the middlebox
+   sends a packed directly back to the endpoint with additional
+   information about why a packet was dropped.  Other communications
+   patterns may be possible, depending on the first principles chosen;
+   this is a subject of future work.
+
+1.1.3.  Least Exposure
 
    Additionally, this document follows the principle of least exposure:
    in each use case, we attempt to define the minimum amount of
    information exposed by endpoints and middleboxes required by the
    proposed mechanism to solve the identified problem.  In addition to
    being good engineering practice, this approach reduces the risk to
-   privacy through inadvertent irrelevant metadata exposure, and reduces
-   the amount of information available for application fingerprinting.
+   privacy through inadvertent irrelevant metadata exposure, reduces the
+   amount of information available for application fingerprinting, and
+   reduces the risk that exposed information could otherwise be used for
+   unintended purposes.
 
 2.  Firewall Traversal for UDP-Encapsulated Traffic
 
@@ -202,6 +218,14 @@ Internet-Draft               SPUD Use Cases                   March 2016
    [I-D.trammell-spud-req], as well as trends in transport protocol
    development (e.g.  QUIC, the RTCWEB data channel) that UDP
    encapsulation will prove a viable approach for deploying new
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016               [Page 4]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    protocols in the Internet.  This, however, leads us to a first
    problem that must be solved.
 
@@ -218,14 +242,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    In addition, some network operators assume that UDP is not often used
    for high-volume traffic, and is often a source of spoofing or
    reflected attack traffic, and is therefore safe to block or route-
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016               [Page 4]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
-
    limit.  This assumption is becoming less true than it once was: the
    volume of (good) UDP traffic is growing, mostly due to voice and
    video (real-time) services (e.g.  RTCWEB) where TCP is not suitable.
@@ -258,6 +274,14 @@ Internet-Draft               SPUD Use Cases                   March 2016
    start and end of a tube to the path, while the receiver must confirm
    connection establishment.  This, together with the first packet
    following the confirmation, provides a guarantee of return
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016               [Page 5]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    routability; i.e. that the sender is actually at the address it says
    it is.  This implies all SPUD tubes must be bidirectional, or at
    least support a feedback channel for this confirmation.  Even though
@@ -274,13 +298,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    message can either be sent directly to the sender itself, or
    alternatively to the receiver that can decide to forward the error
    message to a sender or not.
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016               [Page 5]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
 2.3.  Mechanism
 
@@ -311,6 +328,16 @@ Internet-Draft               SPUD Use Cases                   March 2016
    together with other tube state information) and continue its
    transmission.
 
+
+
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016               [Page 6]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
 2.4.  Deployment Incentives
 
    The ability to use existing firewall management best practices with
@@ -326,17 +353,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    all generic UDP-encapsulated transports to safely pass firewalls.
    However, it does make state handling easier for new services that a
    firewall administrator is willing to allow.
-
-
-
-
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016               [Page 6]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
 2.5.  Security, Privacy, and Trust
 
@@ -369,6 +385,15 @@ Internet-Draft               SPUD Use Cases                   March 2016
    Usually this is implemented by maintaining a timeout since the last
    observed packet.
 
+
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016               [Page 7]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    If the timeouts are set too low, on-path state might be discarded
    while the endpoint connection is still alive; in the case of
    firewalls and NATs, this can lead to unreliable connectivity.  The
@@ -382,17 +407,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    onerous on battery- powered mobile devices, which must wake up radios
    and switch to a higher-power mode to transmit these nonproductive
    packets, leading to suboptimal power usage and shorter battery life.
-
-
-
-
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016               [Page 7]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
 3.2.  Information Exposed
 
@@ -429,6 +443,13 @@ Internet-Draft               SPUD Use Cases                   March 2016
    state receives a timeout proposal, it should set its timeout
    accordingly, subject to its own policy and configuration.
 
+
+
+Kuehlewind & Trammell  Expires September 19, 2016               [Page 8]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    These mechanisms are of course completely advisory: there may be non-
    SPUD aware middleboxes on path which will ignore any proposed timeout
    and not expose their timeout information, and middleboxes must be
@@ -438,17 +459,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    Endpoints must therefore be combine the use of these signals endpoint
    with a dynamic timeout discovery and adaptation mechanism, which uses
    the signals to set initial guesses as to the path timeout.
-
-
-
-
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016               [Page 8]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
 3.4.  Deployment Incentives
 
@@ -488,16 +498,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    which use these signals as hints but clamp their timeouts to sane
    values set by local policy.
 
-   While device timeout and heartbeat interval are generally not linked
-   to privacy-sensitive information, a timeout proposal may add a number
-   of bits of entropy to an endpoint's unique fingerprint.  It is
-   therefore advisable to suggest a small number of useful timeout
-   proposals, in order to reduce this value's contribution to an
-   endpoint fingerprint.
-
-
-
-
 
 
 
@@ -505,6 +505,13 @@ Kuehlewind & Trammell  Expires September 19, 2016               [Page 9]
 
 Internet-Draft               SPUD Use Cases                   March 2016
 
+
+   While device timeout and heartbeat interval are generally not linked
+   to privacy-sensitive information, a timeout proposal may add a number
+   of bits of entropy to an endpoint's unique fingerprint.  It is
+   therefore advisable to suggest a small number of useful timeout
+   proposals, in order to reduce this value's contribution to an
+   endpoint fingerprint.
 
 4.  Path MTU Discovery
 
@@ -547,13 +554,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    PLPMTUD functions by dynamically increasing the size of packets sent,
    and reacting to the loss of the first "too large" packet as an MTU
    reduction signal, instead of a congestion signal.  This must be
-   implemented in cooperation with the superstrate transport protocol,
-   as it is responsible for how non-MTU-related loss is treated.
-
-   When an endpoint receives an accumulated minimum MTU, it should
-   should send it back to its remote peer via a feedback channel.  The
-   minimum of this value and any direct next-hop MTU signals received
-   from SPUD-aware middleboxes can be used as a hint to the sender's
 
 
 
@@ -562,6 +562,13 @@ Kuehlewind & Trammell  Expires September 19, 2016              [Page 10]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
+   implemented in cooperation with the superstrate transport protocol,
+   as it is responsible for how non-MTU-related loss is treated.
+
+   When an endpoint receives an accumulated minimum MTU, it should
+   should send it back to its remote peer via a feedback channel.  The
+   minimum of this value and any direct next-hop MTU signals received
+   from SPUD-aware middleboxes can be used as a hint to the sender's
    PLPMTUD process, as a likely upper bound for path MTU associated with
    a tube.
 
@@ -603,13 +610,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    traffic using loss-based congestion control, which must periodically
    fill the buffer to induce loss during probing for additional
    bandwidth.  This queueing delay can negatively impact the quality of
-   experience for competing interactive applications, even making them
-   unusable.
-
-
-
-
-
 
 
 
@@ -617,6 +617,9 @@ Kuehlewind & Trammell  Expires September 19, 2016              [Page 11]
 
 Internet-Draft               SPUD Use Cases                   March 2016
 
+
+   experience for competing interactive applications, even making them
+   unusable.
 
 5.2.  Information Exposed
 
@@ -663,9 +666,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    traffic load/number of flows in each service class over long
    timescales.
 
-   Applications and endpoints setting the latency sensitivity flag on a
-   tube must be prepared to experience relatively higher loss rates on
-
 
 
 
@@ -674,6 +674,8 @@ Kuehlewind & Trammell  Expires September 19, 2016              [Page 12]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
+   Applications and endpoints setting the latency sensitivity flag on a
+   tube must be prepared to experience relatively higher loss rates on
    that tube, and should use techniques such as Forward Error Correction
    (FEC) to cope with these losses.
 
@@ -717,11 +719,9 @@ Internet-Draft               SPUD Use Cases                   March 2016
 
 6.  Reordering Sensitivity
 
-6.1.  Problem Statement
 
-   TCP's fast retransmit mechanism interprets the reception of three
-   duplicated acknowledgement (where the acknowledgement number is the
-   same than in the previous acknowledgement) as a signal for loss
+
+
 
 
 
@@ -730,6 +730,11 @@ Kuehlewind & Trammell  Expires September 19, 2016              [Page 13]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
+6.1.  Problem Statement
+
+   TCP's fast retransmit mechanism interprets the reception of three
+   duplicated acknowledgement (where the acknowledgement number is the
+   same than in the previous acknowledgement) as a signal for loss
    detection.  However, a missing packet in the sequence number space
    must not always be lost.  Simple reordering where one packet takes a
    longer path than (at least three) subsequent packets can have the
@@ -770,13 +775,8 @@ Internet-Draft               SPUD Use Cases                   March 2016
    reaction to this signal imposes only a small performances penalty, or
    if the flow is short enough that it will not impact its performance.
 
-6.3.  Mechanism
 
-   A middlebox that implement an in-network function that could lead to
-   varying end-to-end delay and reordering (as packets might overtake
-   each other on different paths or within the network device), do not
-   need to perform any additional action if the reordering-sensitivity
-   flag is not set.  However, if the flag is set, the middlebox should
+
 
 
 
@@ -786,6 +786,13 @@ Kuehlewind & Trammell  Expires September 19, 2016              [Page 14]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
+6.3.  Mechanism
+
+   A middlebox that implement an in-network function that could lead to
+   varying end-to-end delay and reordering (as packets might overtake
+   each other on different paths or within the network device), do not
+   need to perform any additional action if the reordering-sensitivity
+   flag is not set.  However, if the flag is set, the middlebox should
    avoid reordering by e.g. holding per- tube state and make sure that
    all packets belonging to the same tube will not be re-ordered.
 
@@ -824,14 +831,7 @@ Internet-Draft               SPUD Use Cases                   March 2016
    the fact that rate adaptation may have negative effects on the user's
    quality of experience, and should therefore be done infrequently.
 
-7.2.  Information Exposed
 
-   A SPUD endpoint sending application-limited traffic can provide an
-   explicit per-tube indication of the maximum intended data rate needed
-   by the current encoding or data source.  If the bottleneck device is
-   SPUD-aware, it can use this information to decide how to correctly
-   treat the tube, e.g. setting a rate limit or scheduling weight if
-   served from its own queue.
 
 
 
@@ -841,6 +841,15 @@ Kuehlewind & Trammell  Expires September 19, 2016              [Page 15]
 
 Internet-Draft               SPUD Use Cases                   March 2016
 
+
+7.2.  Information Exposed
+
+   A SPUD endpoint sending application-limited traffic can provide an
+   explicit per-tube indication of the maximum intended data rate needed
+   by the current encoding or data source.  If the bottleneck device is
+   SPUD-aware, it can use this information to decide how to correctly
+   treat the tube, e.g. setting a rate limit or scheduling weight if
+   served from its own queue.
 
    A SPUD endpoint could also send a "minimum rate limit accumulation"
    request, similar to the other accumulation requests outlined above,
@@ -877,6 +886,18 @@ Internet-Draft               SPUD Use Cases                   March 2016
    prioritize this flow for a certain (short) time to enable a smoother
    transition.
 
+
+
+
+
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016              [Page 16]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
 7.4.  Deployment Incentives
 
    Endpoints that indicate maximum sending rate for application-limited
@@ -890,13 +911,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    Cooperative indication of intended and available sending rate for
    application-limited flows can simplify probing, and provide signals
    beyond loss to react effectively to congestion.
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016              [Page 16]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
 7.5.  Security, Privacy, and Trust
 
@@ -933,6 +947,13 @@ Internet-Draft               SPUD Use Cases                   March 2016
    could even indicate more fine-grained priority levels to provide
    automatic graceful degradation of service within the network itself.
 
+
+
+Kuehlewind & Trammell  Expires September 19, 2016              [Page 17]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
 8.3.  Mechanism
 
    Designing a general-purpose mechanism that maps relative priorities
@@ -946,14 +967,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    However, in the not-uncommon case that exists in many access
    networks, where the bottleneck link has per-user queues and can
    enforce per-user fairness, the relative priorities can be mapped to
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016              [Page 17]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
-
    absolute priorities, and simple priority queueing at the bottleneck
    can be used.  Lower priority packets within a tube, however, should
    be assigned to the tube's priority class, and preferentially dropped
@@ -989,6 +1002,14 @@ Internet-Draft               SPUD Use Cases                   March 2016
    assumption-based approaches for getting better information out of the
    network: traceroute and BGP looking glasses for topology information,
    TCP sequence number and TCP timestamp based approaches for latency
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016              [Page 18]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    and loss estimation, and so on.  Each of these uses values placed on
    the wire for the internal use of the protocol, not for measurement
    purposes, and do not necessarily apply to the deployment of new
@@ -1002,13 +1023,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    explicitly to be used for measurement in a transport protocol
    independent way allows explicit endpoint control of measurability and
    measurement overhead.
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016              [Page 18]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
    We note that current work in IPPM [I-D.ietf-ippm-6man-pdm-option]
    proposes a roughly equivalent, IPv6-only, kernel-implementation-only
@@ -1045,6 +1059,13 @@ Internet-Draft               SPUD Use Cases                   March 2016
    TCP sequence number based and timestamp option based latency
    estimation.
 
+
+
+Kuehlewind & Trammell  Expires September 19, 2016              [Page 19]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    The information exposed is roughly equivalent than that currently
    exposed by TCP as a side effect of its operation, but defined such
    that they are explicitly useful for measurement, useful regardless of
@@ -1057,15 +1078,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    The nonce and timestamp echo information, emitted as per-packet
    signals in the SPUD header, can be used by any device which can see
    it to estimate performance metrics on a per-tube basis.  This
-
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016              [Page 19]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
-
    includes both remote endpoints, as well as passive performance
    measurement devices colocated with network gateways.
 
@@ -1101,6 +1113,15 @@ Internet-Draft               SPUD Use Cases                   March 2016
 
    Performance measurement boxes at gateways which observe and aggregate
    these signals will necessarily need to trust their accuracy, but can
+
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016              [Page 20]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    verify their plausibility by calculating nonce sums and synchronizing
    timing clocks.
 
@@ -1112,15 +1133,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
 
    Security and privacy considerations for each use case are given in
    the corresponding Security, Privacy, and Trust subsection.
-
-
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016              [Page 20]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
 12.  Acknowledgments
 
@@ -1156,6 +1168,16 @@ Internet-Draft               SPUD Use Cases                   March 2016
               design of a Substrate Protocol for User Datagrams (SPUD)",
               draft-trammell-spud-req-02 (work in progress), March 2016.
 
+
+
+
+
+
+Kuehlewind & Trammell  Expires September 19, 2016              [Page 21]
+
+Internet-Draft               SPUD Use Cases                   March 2016
+
+
    [I-D.you-tsvwg-latency-loss-tradeoff]
               You, J., Welzl, M., Trammell, B., Kuehlewind, M., and K.
               Smith, "Latency Loss Tradeoff PHB Group", draft-you-tsvwg-
@@ -1168,15 +1190,6 @@ Internet-Draft               SPUD Use Cases                   March 2016
    [RFC1981]  McCann, J., Deering, S., and J. Mogul, "Path MTU Discovery
               for IP version 6", RFC 1981, DOI 10.17487/RFC1981, August
               1996, <http://www.rfc-editor.org/info/rfc1981>.
-
-
-
-
-
-Kuehlewind & Trammell  Expires September 19, 2016              [Page 21]
-
-Internet-Draft               SPUD Use Cases                   March 2016
-
 
    [RFC4821]  Mathis, M. and J. Heffner, "Packetization Layer Path MTU
               Discovery", RFC 4821, DOI 10.17487/RFC4821, March 2007,
@@ -1200,19 +1213,6 @@ Authors' Addresses
    Switzerland
 
    Email: ietf@trammell.ch
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

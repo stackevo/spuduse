@@ -270,6 +270,9 @@ li, p {
   <link href="#rfc.toc" rel="Contents"/>
 <link href="#rfc.section.1" rel="Chapter" title="1 Introduction"/>
 <link href="#rfc.section.1.1" rel="Chapter" title="1.1 Principles and Assumptions"/>
+<link href="#rfc.section.1.1.1" rel="Chapter" title="1.1.1 Trust and Integrity"/>
+<link href="#rfc.section.1.1.2" rel="Chapter" title="1.1.2 Endpoint Control"/>
+<link href="#rfc.section.1.1.3" rel="Chapter" title="1.1.3 Least Exposure"/>
 <link href="#rfc.section.2" rel="Chapter" title="2 Firewall Traversal for UDP-Encapsulated Traffic"/>
 <link href="#rfc.section.2.1" rel="Chapter" title="2.1 Problem Statement"/>
 <link href="#rfc.section.2.2" rel="Chapter" title="2.2 Information Exposed"/>
@@ -331,8 +334,8 @@ li, p {
   <meta name="dct.creator" content="Kuehlewind, M., Ed. and B. Trammell, Ed." />
   <meta name="dct.identifier" content="urn:ietf:id:draft-kuehlewind-spud-use-latest" />
   <meta name="dct.issued" scheme="ISO8601" content="2016-3-18" />
-  <meta name="dct.abstract" content="This document identifies use cases for an encapsulation layer providing explicit cooperation between endpoints and middleboxes in the Internet under endpoint control. These use cases range from relatively low level applications (improving the ). They are intended to provide background for deriving the requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January 2015 and the SPUD BoF session at IETF 92 in March 2015." />
-  <meta name="description" content="This document identifies use cases for an encapsulation layer providing explicit cooperation between endpoints and middleboxes in the Internet under endpoint control. These use cases range from relatively low level applications (improving the ). They are intended to provide background for deriving the requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January 2015 and the SPUD BoF session at IETF 92 in March 2015." />
+  <meta name="dct.abstract" content="This document identifies use cases for explicit cooperation between endpoints and middleboxes in the Internet under endpoint control. These use cases range from relatively low level applications (improving the ability for UDP-based protocols to traverse firewalls) through support for new transport services (in-flow prioritization for graceful in-network degradation of media streams). They are intended to provide background for deriving the requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January 2015 and the SPUD BoF session at IETF 92 in March 2015." />
+  <meta name="description" content="This document identifies use cases for explicit cooperation between endpoints and middleboxes in the Internet under endpoint control. These use cases range from relatively low level applications (improving the ability for UDP-based protocols to traverse firewalls) through support for new transport services (in-flow prioritization for graceful in-network degradation of media streams). They are intended to provide background for deriving the requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January 2015 and the SPUD BoF session at IETF 92 in March 2015." />
 
 </head>
 
@@ -368,7 +371,7 @@ li, p {
   <h1 id="rfc.abstract">
   <a href="#rfc.abstract">Abstract</a>
 </h1>
-<p>This document identifies use cases for an encapsulation layer providing explicit cooperation between endpoints and middleboxes in the Internet under endpoint control. These use cases range from relatively low level applications (improving the ). They are intended to provide background for deriving the requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January 2015 and the SPUD BoF session at IETF 92 in March 2015.</p>
+<p>This document identifies use cases for explicit cooperation between endpoints and middleboxes in the Internet under endpoint control. These use cases range from relatively low level applications (improving the ability for UDP-based protocols to traverse firewalls) through support for new transport services (in-flow prioritization for graceful in-network degradation of media streams). They are intended to provide background for deriving the requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January 2015 and the SPUD BoF session at IETF 92 in March 2015.</p>
 <h1 id="rfc.status">
   <a href="#rfc.status">Status of This Memo</a>
 </h1>
@@ -389,7 +392,10 @@ li, p {
 
   	<li>1.   <a href="#rfc.section.1">Introduction</a></li>
 <ul><li>1.1.   <a href="#rfc.section.1.1">Principles and Assumptions</a></li>
-</ul><li>2.   <a href="#rfc.section.2">Firewall Traversal for UDP-Encapsulated Traffic</a></li>
+<ul><li>1.1.1.   <a href="#rfc.section.1.1.1">Trust and Integrity</a></li>
+<li>1.1.2.   <a href="#rfc.section.1.1.2">Endpoint Control</a></li>
+<li>1.1.3.   <a href="#rfc.section.1.1.3">Least Exposure</a></li>
+</ul></ul><li>2.   <a href="#rfc.section.2">Firewall Traversal for UDP-Encapsulated Traffic</a></li>
 <ul><li>2.1.   <a href="#rfc.section.2.1">Problem Statement</a></li>
 <li>2.2.   <a href="#rfc.section.2.2">Information Exposed</a></li>
 <li>2.3.   <a href="#rfc.section.2.3">Mechanism</a></li>
@@ -447,13 +453,17 @@ li, p {
   </ul>
 
   <h1 id="rfc.section.1"><a href="#rfc.section.1">1.</a> <a href="#introduction" id="introduction">Introduction</a></h1>
-<p id="rfc.section.1.p.1">This document describe use cases for a common Substrate Protocol for User Datagrams (SPUD) that could be used by superstrate transport or application protocols  to explicitly expose information to and exchange information with middleboxes about application traffic and network conditions.</p>
+<p id="rfc.section.1.p.1">This document describe use cases for a common Substrate Protocol for User Datagrams (SPUD) that could be used by superstrate transport or application protocols to explicitly expose information to and exchange information with middleboxes about application traffic and network conditions.</p>
 <p id="rfc.section.1.p.2">For each use case, we first describe a problem that is difficult or impossible to solve with presently deployable protocols within the present Internet architecture. We then discuss which information is exposed by endpoints about the traffic sent, and/or by SPUD-aware middleboxes and routers about the path that traffic will traverse.  We also suggest potential mechanisms to use that exposed information at middleboxes and/or endpoints, in order to demonstrate the feasibility of using the exposed information to the given use case.The described mechanisms are not necessarily proposals for moving forward, nor do they necessarily represent the best approach for applying the exposed information, but should illustrate and motivate the applicability of the exposed information. We further discuss incentives for deployment and any security, privacy, and trust issues that arise in exposing and/or making use of the information.</p>
 <h1 id="rfc.section.1.1"><a href="#rfc.section.1.1">1.1.</a> <a href="#principles-and-assumptions" id="principles-and-assumptions">Principles and Assumptions</a></h1>
-<p id="rfc.section.1.1.p.1">In this document, we assume no pre-existing trust relationship between the communication endpoints and any middlebox or router on the path.  We must therefore always assume that information that is exposed can be incorrect, and/or that the information will be ignored.</p>
-<p id="rfc.section.1.1.p.2">This implies that while endpoints can verify the integrity of information exposed by remote endpoints, they cannot verify the integrity of information exposed by middleboxes. Middleboxes cannot verify the integrity of any information at all. In limited situations where a trust relationship can be established, e.g., between a managed end-user device in an enterprise network and a corporate firewall, this verifiability can be improved.</p>
-<p id="rfc.section.1.1.p.3">We further assume that all communication from middleboxes happens with explicit endpoint permission. For that reason, the information exposed by middleboxes in this document takes only two forms. In the first form, &#8220;accumulation&#8221;, the endpoint creates space in the header for middleboxes to use to signal to the remote endpoint, which then sends the information back to the originating endpoint via a feedback channel. In the second form, the middlebox sends a packed directly back to the endpoint with additional information about why a packet was dropped. Other communications patterns may be possible, depending on the first principles chosen; this is a subject of future work.</p>
-<p id="rfc.section.1.1.p.4">Additionally, this document follows the principle of least exposure: in each use case, we attempt to define the minimum amount of information exposed by endpoints and middleboxes required by the proposed mechanism to solve the identified problem. In addition to being good engineering practice, this approach reduces the risk to privacy through inadvertent irrelevant metadata exposure, and reduces the amount of information available for application fingerprinting.</p>
+<p id="rfc.section.1.1.p.1">We make a few assumptions about first principles in elaborating these use cases</p>
+<h1 id="rfc.section.1.1.1"><a href="#rfc.section.1.1.1">1.1.1.</a> <a href="#trust-and-integrity" id="trust-and-integrity">Trust and Integrity</a></h1>
+<p id="rfc.section.1.1.1.p.1">In this document, we assume no pre-existing trust relationship between the communication endpoints and any middlebox or router on the path.  We must therefore always assume that information that is exposed can be incorrect, and/or that the information will be ignored.</p>
+<p id="rfc.section.1.1.1.p.2">This implies that while endpoints can verify the integrity of information exposed by remote endpoints, they cannot verify the integrity of information exposed by middleboxes. Middleboxes cannot verify the integrity of any information at all. In limited situations where a trust relationship can be established, e.g., between a managed end-user device in an enterprise network and a corporate firewall, this verifiability can be improved.</p>
+<h1 id="rfc.section.1.1.2"><a href="#rfc.section.1.1.2">1.1.2.</a> <a href="#endpoint-control" id="endpoint-control">Endpoint Control</a></h1>
+<p id="rfc.section.1.1.2.p.1">We further assume that all information exposure by middleboxes happens under explicit endpoint control. For that reason, the information exposed by middleboxes in this document takes only two forms. In the first form, &#8220;accumulation&#8221;, the endpoint creates space in the header for middleboxes to use to signal to the remote endpoint, which then sends the information back to the originating endpoint via a feedback channel. In the second form, the middlebox sends a packed directly back to the endpoint with additional information about why a packet was dropped. Other communications patterns may be possible, depending on the first principles chosen; this is a subject of future work.</p>
+<h1 id="rfc.section.1.1.3"><a href="#rfc.section.1.1.3">1.1.3.</a> <a href="#least-exposure" id="least-exposure">Least Exposure</a></h1>
+<p id="rfc.section.1.1.3.p.1">Additionally, this document follows the principle of least exposure: in each use case, we attempt to define the minimum amount of information exposed by endpoints and middleboxes required by the proposed mechanism to solve the identified problem. In addition to being good engineering practice, this approach reduces the risk to privacy through inadvertent irrelevant metadata exposure, reduces the amount of information available for application fingerprinting, and reduces the risk that exposed information could otherwise be used for unintended purposes.</p>
 <h1 id="rfc.section.2"><a href="#rfc.section.2">2.</a> <a href="#firewall-traversal-for-udp-encapsulated-traffic" id="firewall-traversal-for-udp-encapsulated-traffic">Firewall Traversal for UDP-Encapsulated Traffic</a></h1>
 <p id="rfc.section.2.p.1">We presume, following an analysis of requirements in <a href="#I-D.trammell-spud-req">[I-D.trammell-spud-req]</a>, as well as trends in transport protocol development (e.g. QUIC, the RTCWEB data channel) that UDP encapsulation will prove a viable approach for deploying new protocols in the Internet. This, however, leads us to a first problem that must be solved.</p>
 <h1 id="rfc.section.2.1"><a href="#rfc.section.2.1">2.1.</a> <a href="#problem-statement" id="problem-statement">Problem Statement</a></h1>
