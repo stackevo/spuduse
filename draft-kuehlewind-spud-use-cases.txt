@@ -90,7 +90,7 @@ Table of Contents
      5.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  12
      5.4.  Deployment Incentives . . . . . . . . . . . . . . . . . .  13
      5.5.  Security, Privacy, and Trust  . . . . . . . . . . . . . .  13
-   6.  Reordering Sensitive  . . . . . . . . . . . . . . . . . . . .  13
+   6.  Reordering Sensitivity  . . . . . . . . . . . . . . . . . . .  13
      6.1.  Problem Statement . . . . . . . . . . . . . . . . . . . .  13
      6.2.  Information Exposed . . . . . . . . . . . . . . . . . . .  14
      6.3.  Mechanism . . . . . . . . . . . . . . . . . . . . . . . .  14
@@ -715,7 +715,7 @@ Internet-Draft               SPUD Use Cases                   March 2016
    classifiers that would be used to determine the latency sensitivity
    of traffic passing a middlebox.
 
-6.  Reordering Sensitive
+6.  Reordering Sensitivity
 
 6.1.  Problem Statement
 
@@ -730,7 +730,7 @@ Kuehlewind & Trammell  Expires September 19, 2016              [Page 13]
 Internet-Draft               SPUD Use Cases                   March 2016
 
 
-   detection.  However, a missing packet in the squence number space
+   detection.  However, a missing packet in the sequence number space
    must not always be lost.  Simple reordering where one packet takes a
    longer path than (at least three) subsequent packets can have the
    same effect.
@@ -1078,16 +1078,16 @@ Internet-Draft               SPUD Use Cases                   March 2016
    additional insight given during network troubleshooting by explicit
    measurement headers.
 
-   Further the provided measurement value can also be exposed by SPUD to
-   the far- endpoint (superstrate or application) and therefore be used
-   for performance enhancement on these layers.  Once the facility is
-   deployed in SPUD-aware endpoints, it can also be used for inter-
-   network and cross-Internet performance measurement and debugging
-   (replacing today's processing-expensive DPI mechanims).
+   Further, since the provided measurement information is exposed by
+   SPUD to the far-endpoint, it can be used for performance enhancement
+   on these layers.  Once the facility is deployed in SPUD-aware
+   endpoints, it can also be used for inter-network and cross-Internet
+   performance measurement and debugging (replacing today's processing-
+   intensive DPI mechanisms).
 
 9.5.  Security, Privacy, and Trust
 
-   The cumulative nonce and timestamp echos leak no more information
+   The cumulative nonce and timestamp echo leaks no more information
    about the traffic than the TCP header does.  Indeed, since the
    cumulative nonce does not include sequence number information or
    other protocol-internal information, it allows passive measurement of

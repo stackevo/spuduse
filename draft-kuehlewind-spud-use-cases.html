@@ -294,7 +294,7 @@ li, p {
 <link href="#rfc.section.5.3" rel="Chapter" title="5.3 Mechanism"/>
 <link href="#rfc.section.5.4" rel="Chapter" title="5.4 Deployment Incentives"/>
 <link href="#rfc.section.5.5" rel="Chapter" title="5.5 Security, Privacy, and Trust"/>
-<link href="#rfc.section.6" rel="Chapter" title="6 Reordering Sensitive"/>
+<link href="#rfc.section.6" rel="Chapter" title="6 Reordering Sensitivity"/>
 <link href="#rfc.section.6.1" rel="Chapter" title="6.1 Problem Statement"/>
 <link href="#rfc.section.6.2" rel="Chapter" title="6.2 Information Exposed"/>
 <link href="#rfc.section.6.3" rel="Chapter" title="6.3 Mechanism"/>
@@ -413,7 +413,7 @@ li, p {
 <li>5.3.   <a href="#rfc.section.5.3">Mechanism</a></li>
 <li>5.4.   <a href="#rfc.section.5.4">Deployment Incentives</a></li>
 <li>5.5.   <a href="#rfc.section.5.5">Security, Privacy, and Trust</a></li>
-</ul><li>6.   <a href="#rfc.section.6">Reordering Sensitive</a></li>
+</ul><li>6.   <a href="#rfc.section.6">Reordering Sensitivity</a></li>
 <ul><li>6.1.   <a href="#rfc.section.6.1">Problem Statement</a></li>
 <li>6.2.   <a href="#rfc.section.6.2">Information Exposed</a></li>
 <li>6.3.   <a href="#rfc.section.6.3">Mechanism</a></li>
@@ -531,9 +531,9 @@ li, p {
 <h1 id="rfc.section.5.5"><a href="#rfc.section.5.5">5.5.</a> <a href="#security-privacy-and-trust-3" id="security-privacy-and-trust-3">Security, Privacy, and Trust</a></h1>
 <p id="rfc.section.5.5.p.1">An application cannot benefit from wrongly indicating loss- or latency- sensitivity, as it has to make a tradeoff between low loss and potential high delay or low delay and potential high loss.</p>
 <p id="rfc.section.5.5.p.2">A simple classification of traffic as loss- or latency-sensitive does not expose privacy-critical information about the user&#8217;s behavior; indeed, it exposes far less than presently used by DPI-based traffic classifiers that would be used to determine the latency sensitivity of traffic passing a middlebox.</p>
-<h1 id="rfc.section.6"><a href="#rfc.section.6">6.</a> <a href="#reorder" id="reorder">Reordering Sensitive</a></h1>
+<h1 id="rfc.section.6"><a href="#rfc.section.6">6.</a> <a href="#reorder" id="reorder">Reordering Sensitivity</a></h1>
 <h1 id="rfc.section.6.1"><a href="#rfc.section.6.1">6.1.</a> <a href="#problem-statement-4" id="problem-statement-4">Problem Statement</a></h1>
-<p id="rfc.section.6.1.p.1">TCP&#8217;s fast retransmit mechanism interprets the reception of three duplicated acknowledgement (where the acknowledgement number is the same than in the previous acknowledgement) as a signal for loss detection. However, a missing packet in the squence number space must not always be lost. Simple reordering where one packet takes a longer path than (at least three) subsequent packets can have the same effect.</p>
+<p id="rfc.section.6.1.p.1">TCP&#8217;s fast retransmit mechanism interprets the reception of three duplicated acknowledgement (where the acknowledgement number is the same than in the previous acknowledgement) as a signal for loss detection. However, a missing packet in the sequence number space must not always be lost. Simple reordering where one packet takes a longer path than (at least three) subsequent packets can have the same effect.</p>
 <p id="rfc.section.6.1.p.2">In addition in TCP, loss is an implicit signal for network congestion.  Therefore the reception of three duplicated acknowledgement will cause a TCP sender to reduce its sending rate. To avoid unnecessary performance decreases, today&#8217;s in-network mechanisms usually aim to avoid reordering. However, this complicates these mechanism significantly and usually requires per-flow state, e.g. in case of Equal Cost Multipath (ECMP) routing where a hash of the 5 tuple would need to be mapped to the right path.</p>
 <p id="rfc.section.6.1.p.3">Even though the majority of traffic in the Internet is still TCP, it is likely that new protocols will be design such that they are (more) robust to reordering. Further with an increasing deployment of ECN, even TCP&#8217;s congestion control reaction based on duplicated acknowledgements could be relaxed (e.g. by reducing the sending rate gradually depending on the number of lost packets).</p>
 <p id="rfc.section.6.1.p.4">However, as middlebox can not know if a certain traffic flow is sensitive to reordering or not, they have to treat all traffic as equally and try to always avoid reordering. (This does not only complicate these mechanism but might also block the deployment of new services.)</p>
@@ -591,9 +591,9 @@ li, p {
 <p id="rfc.section.9.3.p.1">The nonce and timestamp echo information, emitted as per-packet signals in the SPUD header, can be used by any device which can see it to estimate performance metrics on a per-tube basis. This includes both remote endpoints, as well as passive performance measurement devices colocated with network gateways.</p>
 <h1 id="rfc.section.9.4"><a href="#rfc.section.9.4">9.4.</a> <a href="#deployment-incentives-6" id="deployment-incentives-6">Deployment Incentives</a></h1>
 <p id="rfc.section.9.4.p.1">Initial deployment of this facility is most likely in closed networks such as enterprise data centers, where a single administrative entity owns the network and the endpoints, can control which flows and tubes are annotated with measurement information, and can benefit from the additional insight given during network troubleshooting by explicit measurement headers.</p>
-<p id="rfc.section.9.4.p.2">Further the provided measurement value can also be exposed by SPUD to the far- endpoint (superstrate or application) and therefore be used for performance enhancement on these layers. Once the facility is deployed in SPUD-aware endpoints, it can also be used for inter- network and cross-Internet performance measurement and debugging (replacing today&#8217;s processing-expensive DPI mechanims).</p>
+<p id="rfc.section.9.4.p.2">Further, since the provided measurement information is exposed by SPUD to the far-endpoint, it can be used for performance enhancement on these layers.  Once the facility is deployed in SPUD-aware endpoints, it can also be used for inter-network and cross-Internet performance measurement and debugging (replacing today&#8217;s processing-intensive DPI mechanisms).</p>
 <h1 id="rfc.section.9.5"><a href="#rfc.section.9.5">9.5.</a> <a href="#security-privacy-and-trust-7" id="security-privacy-and-trust-7">Security, Privacy, and Trust</a></h1>
-<p id="rfc.section.9.5.p.1">The cumulative nonce and timestamp echos leak no more information about the traffic than the TCP header does. Indeed, since the cumulative nonce does not include sequence number information or other protocol-internal information, it allows passive measurement of loss and latency without giving measurement devices access to information they could use to spoof valid packets within a transport layer connection.</p>
+<p id="rfc.section.9.5.p.1">The cumulative nonce and timestamp echo leaks no more information about the traffic than the TCP header does. Indeed, since the cumulative nonce does not include sequence number information or other protocol-internal information, it allows passive measurement of loss and latency without giving measurement devices access to information they could use to spoof valid packets within a transport layer connection.</p>
 <p id="rfc.section.9.5.p.2">In order to prevent middleboxes from modifying measurement-relevant information, these per-packet signals will need to be integrity protected by SPUD.</p>
 <p id="rfc.section.9.5.p.3">Performance measurement boxes at gateways which observe and aggregate these signals will necessarily need to trust their accuracy, but can verify their plausibility by calculating nonce sums and synchronizing timing clocks.</p>
 <h1 id="rfc.section.10"><a href="#rfc.section.10">10.</a> <a href="#iana-considerations" id="iana-considerations">IANA Considerations</a></h1>
