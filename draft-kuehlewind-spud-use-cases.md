@@ -44,39 +44,61 @@ informative:
 
 --- abstract
 
-The Substrate Protocol for User Datagrams (SPUD) BoF session at the IETF 92 meeting in Dallas in March 2015 identified the potential need for a UDP-based encapsulation protocol to allow explicit cooperation with middleboxes while using new, encrypted transport protocols. This document summarizes the use cases discuss at the BoF and thereby proposes a structure for the description of further use cases.
+This document identifies use cases for an encapsulation layer providing
+explicit cooperation between endpoints and middleboxes in the Internet under
+endpoint control. These use cases range from relatively low level applications
+(improving the ). They are intended to provide background for deriving the
+requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed
+at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January
+2015 and the SPUD BoF session at IETF 92 in March 2015.
 
 --- middle
 
 # Introduction
 
 This document describe use cases for a common Substrate Protocol for User
-Datagrams (SPUD) that could be used by an overlaying transport or application
-to explicitely expose information to middleboxes or request information from
-(SPUD-aware) middleboxes.
+Datagrams (SPUD) that could be used by superstrate transport or application
+protocols  to explicitly expose information to and exchange information with
+middleboxes about application traffic and network conditions.
 
-For each use case, we first describe a problem that can not be solved with
-current protocols, or only solved inefficiently. We then discuss which
-information should be exposed by which party to help the described problem. We
-also discuss potential mechanisms to use that exposed information at
-middleboxes and/or endpoints, in order to demonstrate the feasibility of using
-the exposed information to the given use case. The described mechanisms are
-not necessarily proposals for moving forward, nor do  they necessarily
-represent the best approach for applying the exposed information,  but should
-illustrate and motivate the applicability of the exposed information.
+For each use case, we first describe a problem that is difficult or impossible
+to solve with presently deployable protocols within the present Internet
+architecture. We then discuss which information is exposed by endpoints about
+the traffic sent, and/or by SPUD-aware middleboxes and routers about the path
+that traffic will traverse.  We also suggest potential mechanisms to use that
+exposed information at middleboxes and/or endpoints, in order to demonstrate
+the feasibility of using the exposed information to the given use case.The
+described mechanisms are not necessarily proposals for moving forward, nor do
+they necessarily represent the best approach for applying the exposed
+information, but should illustrate and motivate the applicability of the
+exposed information. We further discuss incentives for deployment and any
+security, privacy, and trust issues that arise in exposing and/or making use
+of the information.
 
-In this document we assume that there is no pre-existing trust relationship
-between the communication endpoints and any middlebox on the path. Therefore
-we must always assume that information that is exposed can be wrong or nobody
-will actually act based on the exposed information. However, for the described
-use cases there should still be a benefit, e.g if otherwise no information
-would be available.
+## Principles and Assumptions
 
-Based on each mechanism, we discuss deployment incentives of each involved
-party. There must be clear incentives for each party to justify the proposed
-information exposure and at best an incremental deployment strategy. Finally,
-we discuss potential privacy concerns regarding the information to be exposed,
-as well as potential security issues of the proposed mechanisms.
+In this document, we assume no pre-existing trust relationship between the
+communication endpoints and any middlebox or router on the path.  We must
+therefore always assume that information that is exposed can be incorrect,
+and/or that the information will be ignored.
+
+This implies that while endpoints can verify the integrity of information
+exposed by remote endpoints, they cannot verify the integrity of information
+exposed by middleboxes. Middleboxes cannot verify the integrity of any
+information at all. In limited situations where a trust relationship can be
+established, e.g., between a managed end-user device in an enterprise network
+and a corporate firewall, this verifiability can be improved.
+
+We further assume that all communication from middleboxes happens with
+explicit endpoint permission. For that reason, the information exposed by
+middleboxes in this document takes only two forms. In the first form,
+"accumulation", the endpoint creates space in the header for middleboxes to
+use to signal to the remote endpoint, which then sends the information back to
+the originating endpoint via a feedback channel. In the second form, the
+middlebox sends a packed directly back to the endpoint with additional
+information about why a packet was dropped. Other communications patterns may
+be possible, depending on the first principles chosen; this is a subject of
+future work.
 
 
 
@@ -178,7 +200,8 @@ transport services over SPUD is necessary to ensure the deployability of SPUD.
 In today's Internet, application developers really only have two choices for
 transport protocols: TCP, or transports implemented at the application layer
 and encapsulated over UDP. SPUD provides a common shim layer for the second
-case, and the firewall traversal facility it provides makes these transports more likely to deploy.
+case, and the firewall traversal facility it provides makes these transports
+more likely to deploy.
 
 It is not expected that the information provided by SPUD will enable all
 generic UDP-encapsulated transports to safely pass firewalls. However, it does
@@ -202,7 +225,10 @@ level knowledge.
 
 # On-Path State Lifetime Discovery and Management
 
-Once the problem of connection setup is solved, the problem arises of managing the lifetime of state associated with that connection at various devices along the path: NAT and stateful firewall state timeouts are a common cause of connectivity issues in the Internet.
+Once the problem of connection setup is solved, the problem arises of managing
+the lifetime of state associated with that connection at various devices along
+the path: NAT and stateful firewall state timeouts are a common cause of
+connectivity issues in the Internet.
 
 ## Problem Statement
 
@@ -311,7 +337,11 @@ value's contribution to an endpoint fingerprint.
 
 # Path MTU Discovery
 
-Similar to the state timeout problem is the Path MTU problem: differing MTUs on different devices along the path can lead to fragmentation or connectivity issues. This problem is made worse by the increasing proliferation of tunnels in the Internet, which reduce the MTU by the amount required for tunnel headers. 
+Similar to the state timeout problem is the Path MTU problem: differing MTUs
+on different devices along the path can lead to fragmentation or connectivity
+issues. This problem is made worse by the increasing proliferation of tunnels
+in the Internet, which reduce the MTU by the amount required for tunnel
+headers.
 
 ## Problem Statement
 
@@ -334,7 +364,9 @@ minimum MTU" request along with some scratch space for middleboxes to place
 the next-hop MTU for the given tube. Each middlebox inspects this value, and
 writes its own next-hop MTU only if lower than the present value.
 
-A SPUD-aware middlebox that receives a packet that is too big for the next-hop MTU can send back a signal associated with the tube directly to the sender, including the next-hop MTU.
+A SPUD-aware middlebox that receives a packet that is too big for the next-hop
+MTU can send back a signal associated with the tube directly to the sender,
+including the next-hop MTU.
 
 ## Mechanism
 
@@ -477,33 +509,76 @@ middlebox.
 
 ## Problem Statement
 
-TCP's fast retransmit mechanism interprets the reception of three duplicated acknowledgement (where the acknowledgement number is the same than in the previous acknowledgement) as a signal for loss detection. However, a missing packet in the squence number space must not always be lost. Simple reordering where one packet takes a longer path than (at least three) subsequent packets can have the same effect.
+TCP's fast retransmit mechanism interprets the reception of three duplicated
+acknowledgement (where the acknowledgement number is the same than in the
+previous acknowledgement) as a signal for loss detection. However, a missing
+packet in the squence number space must not always be lost. Simple reordering
+where one packet takes a longer path than (at least three) subsequent packets
+can have the same effect.
 
-In addition in TCP, loss is an implicit signal for network congestion. Therefore the reception of three duplicated acknowledgement will cause a TCP sender to reduce its sending rate. To avoid unnecessary performance decreases, today's in-network mechanisms usually aim to avoid reordering. However, this complicates these mechanism significantly and usually requires per-flow state, e.g. in case of Equal Cost Multipath (ECMP) routing where a hash of the 5 tuple would need to be mapped to the right path.
+In addition in TCP, loss is an implicit signal for network congestion.
+Therefore the reception of three duplicated acknowledgement will cause a TCP
+sender to reduce its sending rate. To avoid unnecessary performance decreases,
+today's in-network mechanisms usually aim to avoid reordering. However, this
+complicates these mechanism significantly and usually requires per-flow state,
+e.g. in case of Equal Cost Multipath (ECMP) routing where a hash of the 5
+tuple would need to be mapped to the right path.
 
-Even though the majority of traffic in the Internet is still TCP, it is likely that new protocols will be design such that they are (more) robust to reordering. Further with an increasing deployment of ECN, even TCP's congestion control reaction based on duplicated acknowledgements could be relaxed (e.g. by reducing the sending rate gradually depending on the number of lost packets).
+Even though the majority of traffic in the Internet is still TCP, it is likely
+that new protocols will be design such that they are (more) robust to
+reordering. Further with an increasing deployment of ECN, even TCP's
+congestion control reaction based on duplicated acknowledgements could be
+relaxed (e.g. by reducing the sending rate gradually depending on the number
+of lost packets).
 
-However, as middlebox can not know if a certain traffic flow is sensitive to reordering or not, they have to treat all traffic as equally and try to always avoid reordering. (This does not only complicate these mechanism but might also block the deployment of new services.)
+However, as middlebox can not know if a certain traffic flow is sensitive to
+reordering or not, they have to treat all traffic as equally and try to always
+avoid reordering. (This does not only complicate these mechanism but might
+also block the deployment of new services.)
 
 ## Information Exposed
 
-Reordering-sensitivity is a per tube signal (as reordering can only happen with a flow multiple packets). However, to avoid state in middlebox, it would be beneficial to have a reordering-sensitive flag in each packet.
+Reordering-sensitivity is a per tube signal (as reordering can only happen
+with a flow multiple packets). However, to avoid state in middlebox, it would
+be beneficial to have a reordering-sensitive flag in each packet.
 
-A transport should set the bit if it is not sensitive to reordering, e.g. if it uses a more advance mechanism (than duplicated acknowledgement) for loss detection, or if the congestion control reaction to this signal imposes only a small performances penalty, or if the flow is short enough that it will not impact its performance.
+A transport should set the bit if it is not sensitive to reordering, e.g. if
+it uses a more advance mechanism (than duplicated acknowledgement) for loss
+detection, or if the congestion control reaction to this signal imposes only a
+small performances penalty, or if the flow is short enough that it will not
+impact its performance.
 
 ## Mechanism
 
-A middlebox that implement an in-network function that could lead to varying end-to-end delay and reordering (as packets might overtake each other on different paths or within the network device), do not need to perform any additional action if the reordering-sensitivity flag is not set. However, if the flag is set, the middlebox should avoid reordering by e.g. holding per-tube state and make sure that all packets belonging to the same tube will not be re-ordered.
+A middlebox that implement an in-network function that could lead to varying
+end-to-end delay and reordering (as packets might overtake each other on
+different paths or within the network device), do not need to perform any
+additional action if the reordering-sensitivity flag is not set. However, if
+the flag is set, the middlebox should avoid reordering by e.g. holding per-
+tube state and make sure that all packets belonging to the same tube will not
+be re-ordered.
 
 ## Deployment Incentives
 
-Today by default middlebox assume that all traffic is reordering-sensitive which complicates certain in-network mechanism or might also block the deployment of new services. If a middlebox would know that certain traffic is not reordering-sensitive, it could reduce state, speed-up processing, or even implement new services.
+Today by default middlebox assume that all traffic is reordering-sensitive
+which complicates certain in-network mechanism or might also block the
+deployment of new services. If a middlebox would know that certain traffic is
+not reordering-sensitive, it could reduce state, speed-up processing, or even
+implement new services.
 
-Applications that are not loss-sensitive (because they e.g. uses FEC) usually are also not reordering-sensitive. At the same time these application are often sensitive to latency. If the transport handles reordering appropriately and signal this semantic information to the network, the appropriate network treatment can likely also result in lower end-to-end or at least enables the network device to impose any additional delay (e.g. to set up state) on these packets.
+Applications that are not loss-sensitive (because they e.g. uses FEC) usually
+are also not reordering-sensitive. At the same time these application are
+often sensitive to latency. If the transport handles reordering appropriately
+and signal this semantic information to the network, the appropriate network
+treatment can likely also result in lower end-to-end or at least enables the
+network device to impose any additional delay (e.g. to set up state) on these
+packets.
 
 ## Security, Privacy, and Trust
 
-No trust relationship is needed as the provided information do not results in a preferential treatment. Only transport semantics are exposed that to not contain any private information. No security threats are known.
+No trust relationship is needed as the provided information do not results in
+a preferential treatment. Only transport semantics are exposed that to not
+contain any private information.
 
 
 
@@ -575,7 +650,11 @@ probing, and provide signals beyond loss to react effectively to congestion.
 
 ## Security, Privacy, and Trust
 
-Both endpoints and SPUD-aware middleboxes should react defensively to rate limit and rate intention information. Endpoints and middleboxes should use measurement and probing to verify that rate information is accurate, but the exposed rate information can be used as hints to routing, scheduling, and rate determination processes.
+Both endpoints and SPUD-aware middleboxes should react defensively to rate
+limit and rate intention information. Endpoints and middleboxes should use
+measurement and probing to verify that rate information is accurate, but the
+exposed rate information can be used as hints to routing, scheduling, and rate
+determination processes.
 
 
 
@@ -716,8 +795,12 @@ and the endpoints, can control which flows and tubes are annotated with
 measurement information, and can benefit from the additional insight given
 during network troubleshooting by explicit measurement headers. 
 
-Further the provided measurement value can also be exposed by SPUD to the far-endpoint (superstrate or application) and therefore be used for performance enhancement on these layers. Once the facility is deployed in SPUD-aware endpoints, it can also be used for inter-
-network and cross-Internet performance measurement and debugging (replacing today's processing-expensive DPI mechanims).
+Further the provided measurement value can also be exposed by SPUD to the far-
+endpoint (superstrate or application) and therefore be used for performance
+enhancement on these layers. Once the facility is deployed in SPUD-aware
+endpoints, it can also be used for inter- network and cross-Internet
+performance measurement and debugging (replacing today's processing-expensive
+DPI mechanims).
 
 ## Security, Privacy, and Trust
 
@@ -750,7 +833,10 @@ corresponding Security, Privacy, and Trust subsection.
 
 This document grew in part out of discussions of initial use cases for
 middlebox cooperation at the IAB SEMI Workshop and the IETF 92 SPUD BoF;
-thanks to the participants. {{meas}} is based in part on discussions and
+thanks to the participants. Some use case details came out of discussions with
+the authors of the {{I-D.trammell-spud-req}}: in addition to the editors of
+this document, David Black, Ken Calvert, Ted Hardie, Joe Hildebrand, Jana
+Iyengar, and Eric Rescorla. {{meas}} is based in part on discussions and
 ongoing work with Mark Allman and Rob Beverly.
 
 This work is supported by the European Commission under Horizon 2020 grant
