@@ -512,14 +512,14 @@ middlebox.
 
 
 
-# Reordering Sensitive  {#reorder}
+# Reordering Sensitivity  {#reorder}
 
 ## Problem Statement
 
 TCP's fast retransmit mechanism interprets the reception of three duplicated
 acknowledgement (where the acknowledgement number is the same than in the
 previous acknowledgement) as a signal for loss detection. However, a missing
-packet in the squence number space must not always be lost. Simple reordering
+packet in the sequence number space must not always be lost. Simple reordering
 where one packet takes a longer path than (at least three) subsequent packets
 can have the same effect.
 
@@ -802,16 +802,15 @@ and the endpoints, can control which flows and tubes are annotated with
 measurement information, and can benefit from the additional insight given
 during network troubleshooting by explicit measurement headers. 
 
-Further the provided measurement value can also be exposed by SPUD to the far-
-endpoint (superstrate or application) and therefore be used for performance
-enhancement on these layers. Once the facility is deployed in SPUD-aware
-endpoints, it can also be used for inter- network and cross-Internet
-performance measurement and debugging (replacing today's processing-expensive
-DPI mechanims).
+Further, since the provided measurement information is exposed by SPUD to the
+far-endpoint, it can be used for performance enhancement on these layers.
+Once the facility is deployed in SPUD-aware endpoints, it can also be used for
+inter-network and cross-Internet performance measurement and debugging
+(replacing today's processing-intensive DPI mechanisms).
 
 ## Security, Privacy, and Trust
 
-The cumulative nonce and timestamp echos leak no more information about the
+The cumulative nonce and timestamp echo leaks no more information about the
 traffic than the TCP header does. Indeed, since the cumulative nonce does not
 include sequence number information or other protocol-internal information, it
 allows passive measurement of loss and latency without giving measurement
