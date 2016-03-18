@@ -1,7 +1,7 @@
 ---
 title: Use Cases for a Substrate Protocol for User Datagrams (SPUD)
 abbrev: SPUD Use Cases
-docname: draft-kuehlewind-spud-use-latest
+docname: draft-kuehlewind-spud-use-cases-latest
 date: 2016-03-18
 category: info
 
