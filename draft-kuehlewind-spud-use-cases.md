@@ -44,10 +44,12 @@ informative:
 
 --- abstract
 
-This document identifies use cases for an encapsulation layer providing
-explicit cooperation between endpoints and middleboxes in the Internet under
-endpoint control. These use cases range from relatively low level applications
-(improving the ). They are intended to provide background for deriving the
+This document identifies use cases for explicit cooperation between endpoints
+and middleboxes in the Internet under endpoint control. These use cases range
+from relatively low level applications (improving the ability for UDP-based
+protocols to traverse firewalls) through support for new transport services
+(in-flow prioritization for graceful in-network degradation of media
+streams). They are intended to provide background for deriving the
 requirements for a Substrate Protocol for User Datagrams (SPUD), as discussed
 at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January
 2015 and the SPUD BoF session at IETF 92 in March 2015.
@@ -58,7 +60,7 @@ at the IAB Stack Evolution in a Middlebox Internet (SEMI) workshop in January
 
 This document describe use cases for a common Substrate Protocol for User
 Datagrams (SPUD) that could be used by superstrate transport or application
-protocols  to explicitly expose information to and exchange information with
+protocols to explicitly expose information to and exchange information with
 middleboxes about application traffic and network conditions.
 
 For each use case, we first describe a problem that is difficult or impossible
@@ -77,6 +79,10 @@ of the information.
 
 ## Principles and Assumptions
 
+We make a few assumptions about first principles in elaborating these use cases
+
+### Trust and Integrity
+
 In this document, we assume no pre-existing trust relationship between the
 communication endpoints and any middlebox or router on the path.  We must
 therefore always assume that information that is exposed can be incorrect,
@@ -89,8 +95,10 @@ information at all. In limited situations where a trust relationship can be
 established, e.g., between a managed end-user device in an enterprise network
 and a corporate firewall, this verifiability can be improved.
 
-We further assume that all communication from middleboxes happens with
-explicit endpoint permission. For that reason, the information exposed by
+### Endpoint Control
+
+We further assume that all information exposure by middleboxes happens under
+explicit endpoint control. For that reason, the information exposed by
 middleboxes in this document takes only two forms. In the first form,
 "accumulation", the endpoint creates space in the header for middleboxes to
 use to signal to the remote endpoint, which then sends the information back to
@@ -100,13 +108,15 @@ information about why a packet was dropped. Other communications patterns may
 be possible, depending on the first principles chosen; this is a subject of
 future work.
 
+### Least Exposure
+
 Additionally, this document follows the principle of least exposure: in each
 use case, we attempt to define the minimum amount of information exposed by
 endpoints and middleboxes required by the proposed mechanism to solve the
 identified problem. In addition to being good engineering practice, this
 approach reduces the risk to privacy through inadvertent irrelevant metadata
-exposure, and reduces the amount of information available for application
-fingerprinting.
+exposure, reduces the amount of information available for application
+fingerprinting, and reduces the risk that exposed information could otherwise be used for unintended purposes.
 
 
 # Firewall Traversal for UDP-Encapsulated Traffic
