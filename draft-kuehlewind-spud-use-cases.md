@@ -100,12 +100,15 @@ information about why a packet was dropped. Other communications patterns may
 be possible, depending on the first principles chosen; this is a subject of
 future work.
 
+Additionally, this document follows the principle of least exposure: in each
+use case, we attempt to define the minimum amount of information exposed by
+endpoints and middleboxes that makes the
 
 
 # Firewall Traversal for UDP-Encapsulated Traffic
 
-We presume, following an analysis of requirements in {{I-D.trammell-spud-
-req}}, as well as trends in transport protocol development (e.g. QUIC, the
+We presume, following an analysis of requirements in {{I-D.trammell-spud-req}}, 
+as well as trends in transport protocol development (e.g. QUIC, the
 RTCWEB data channel) that UDP encapsulation will prove a viable approach for
 deploying new protocols in the Internet. This, however, leads us to a first
 problem that must be solved.
@@ -425,8 +428,8 @@ applications, even making them unusable.
 ## Information Exposed
 
 The simplest mechanism for solving this problem is to separate loss-sensitive
-from latency-sensitive traffic, as proposed using DSCP codepoints in {{I-D
-.you-tsvwg-latency-loss-tradeoff}}. This signal could also be emitted as a
+from latency-sensitive traffic, as proposed using DSCP codepoints in 
+{{I-D.you-tsvwg-latency-loss-tradeoff}}. This signal could also be emitted as a
 per-packet signal within SPUD, since DSCP codepoints are often used for
 internal traffic engineering and therefore cleared at network borders. This
 indication does not prioritize one kind of traffic over the other: while loss-
@@ -735,8 +738,8 @@ values placed on the wire for the internal use of the protocol, not for
 measurement purposes, and do not necessarily apply to the deployment of new
 protocols or changes to the use of those values by protocol implementations.
 Approaches involving the encryption of transport protocol and application
-headers (indeed, including that the authors advance in {{I-D.trammell-spud-
-req}}) will break most of these, as well.
+headers (indeed, including that the authors advance in 
+{{I-D.trammell-spud-req}}) will break most of these, as well.
 
 Replacing the information used for measurement with values defined explicitly
 to be used for measurement in a transport protocol independent way allows
